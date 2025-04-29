@@ -1,2 +1,3 @@
 # cpplox
-Lox interpreter and compiler written in C++
+
+A C++ implementation of the `jlox` interpreter from Rober Nystrom's [Crafting Interpreters](https://craftinginterpreters.com).
