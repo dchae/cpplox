@@ -11,6 +11,8 @@
 #include <vector>
 
 class Scanner {
+  static const std::map<std::string, TokenType> keywords;
+
   std::string_view source;
   std::vector<Token> tokens;
   size_t start = 0;
@@ -99,10 +101,74 @@ private:
       line++;
       break;
 
+    case '"':
+      string();
+      break;
+
     default:
-      error(line, "Unexpected character.");
+      if (isDigit(c)) {
+        number();
+      } else if (isAlpha(c)) {
+        identifier();
+      } else {
+        error(line, "Unexpected character.");
+      }
       break;
     }
+  }
+
+  void identifier() {
+    while (isAlphaNumeric(peek()))
+      advance();
+
+    std::string text(source.substr(start, current - start));
+
+    TokenType type;
+    auto match = keywords.find(text);
+    if (match == keywords.end()) {
+      type = IDENTIFIER;
+    } else {
+      type = match->second;
+    }
+
+    addToken(type);
+  }
+
+  void number() {
+    while (isDigit(peek()))
+      advance();
+
+    if (peek() == '.' && isDigit(peekNext())) {
+      // Consume the '.'
+      advance();
+
+      while (isDigit(peek()))
+        advance();
+    }
+
+    std::string str_value(source.substr(start, current - start));
+    double value = std::stod(str_value);
+    addToken(NUMBER, value);
+  }
+
+  void string() {
+    while (peek() != '"' && !isAtEnd()) {
+      if (peek() == '\n')
+        line++;
+      advance();
+    }
+
+    if (isAtEnd()) {
+      error(line, "Unterminated string.");
+      return;
+    }
+
+    // Consume closing '"'
+    advance();
+
+    // Trim surrounding quotes
+    std::string value{source.substr(start + 1, current - start - 2)};
+    addToken(STRING, value);
   }
 
   bool match(char expected) {
@@ -121,6 +187,20 @@ private:
     return source[current];
   }
 
+  char peekNext() {
+    if (current + 1 >= source.size())
+      return '\0';
+    return source[current + 1];
+  }
+
+  bool isAlpha(char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
+  }
+
+  bool isAlphaNumeric(char c) { return isAlpha(c) || isDigit(c); }
+
+  bool isDigit(char c) { return '0' <= c && c <= '9'; }
+
   bool isAtEnd() { return current >= source.size(); }
 
   char advance() { return source[current++]; }
@@ -131,4 +211,11 @@ private:
     std::string text{source.substr(start, current - start)};
     tokens.push_back(Token(type, std::move(text), std::move(literal), line));
   }
+};
+
+const std::map<std::string, TokenType> Scanner::keywords = {
+    {"and", AND},   {"class", CLASS}, {"else", ELSE},     {"false", FALSE},
+    {"for", FOR},   {"fun", FUN},     {"if", IF},         {"nil", NIL},
+    {"or", OR},     {"print", PRINT}, {"return", RETURN}, {"super", SUPER},
+    {"this", THIS}, {"true", TRUE},   {"var", VAR},       {"while", WHILE},
 };
