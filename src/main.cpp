@@ -14,7 +14,7 @@ std::string readFile(const std::string_view path) {
     std::exit(74);
   }
 
-  std::stringstream buffer;
+  std::ostringstream buffer;
   buffer << file.rdbuf();
   file.close();
 

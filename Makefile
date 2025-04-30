@@ -26,6 +26,11 @@ test: $(TARGET)
 clean:
 	rm -f $(TARGET)
 
+# Build and run generate_ast
+generate: src/GenerateAst.cpp
+	$(CXX) $(CXXFLAGS) -o build/generate_ast $<
+	./build/generate_ast src
+
 # Default target
 .PHONY: all clean run brun
 all: $(TARGET)
