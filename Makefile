@@ -31,6 +31,11 @@ generate: src/GenerateAst.cpp
 	$(CXX) $(CXXFLAGS) -o build/generate_ast $<
 	./build/generate_ast src
 
+# Build and run AstPrinterDriver
+testPrint: src/AstPrinterDriver.cpp
+	$(CXX) $(CXXFLAGS) -o build/AstPrinterDriver $<
+	./build/AstPrinterDriver
+
 # Default target
 .PHONY: all clean run brun
 all: $(TARGET)

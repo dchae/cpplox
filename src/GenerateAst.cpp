@@ -2,7 +2,7 @@
 #include <cctype>
 #include <fstream>
 #include <iostream> // std::ofstream writer
-#include <sstream>
+#include <sstream>  // std::ostringstream
 #include <string>
 #include <string_view>
 #include <vector>
@@ -72,6 +72,22 @@ std::string fix_pointer(std::string_view field) {
   return out.str();
 }
 
+void defineVisitor(std::ostream &writer, std::string_view baseName,
+                   const std::vector<std::string_view> types) {
+  writer << "struct " << baseName << "Visitor {\n";
+
+  for (std::string_view type : types) {
+    std::string_view typeName = trim(split(type, ":")[0]);
+    writer << "  virtual std::any visit" << typeName << baseName
+           << "(std::shared_ptr<" << typeName << "> " << toLowerCase(baseName)
+           << ") = 0;\n";
+  }
+
+  writer << "\n  virtual ~" << baseName << "Visitor() = default;\n";
+
+  writer << "};\n";
+}
+
 void defineType(std::ofstream &writer, std::string_view baseName,
                 std::string_view className, std::string_view fieldList) {
 
@@ -84,7 +100,7 @@ void defineType(std::ofstream &writer, std::string_view baseName,
   std::vector<std::string_view> fields = split(fieldList, ", ");
 
   writer << fix_pointer(fields[0]);
-  for (int i = 1; i < fields.size(); i++) {
+  for (size_t i = 1; i < fields.size(); i++) {
     writer << ", " << fix_pointer(fields[i]);
   }
 
@@ -94,12 +110,20 @@ void defineType(std::ofstream &writer, std::string_view baseName,
   std::string_view name = split(fields[0], " ")[1];
 
   writer << name << "{std::move(" << name << ")}";
-  for (int i = 1; i < fields.size(); i++) {
+  for (size_t i = 1; i < fields.size(); i++) {
     name = split(fields[i], " ")[1];
     writer << ", " << name << "{std::move(" << name << ")}";
   }
 
   writer << " {}\n";
+
+  // Visitor pattern
+  writer << "\n";
+  writer << "  std::any accept(" << baseName
+         << "Visitor &visitor) override {\n"
+            "    return visitor.visit"
+         << className << baseName << "(shared_from_this());\n"
+         << "  }\n";
 
   // Fields
   writer << "\n";
@@ -119,6 +143,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
               << std::endl;
   }
 
+  writer << "// GenerateAst.cpp > defineAst()\n";
   writer << "#pragma once\n"
             "\n"
             "#include \"Token.h\"\n"
@@ -135,12 +160,30 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   }
   writer << "\n";
 
+  // Visitor
+  writer << "// GenerateAst.cpp > defineVisitor()\n";
+  defineVisitor(writer, baseName, types);
+  writer << "\n";
+
   // Base class
+
+  // Virtual function dispatch happens at runtime in C++, while template
+  // instantiation happens at compile time, so we cannot type template our
+  // virtual accept() method.
+  // Instead, we use std::any type, passing the responsibility of casting the
+  // return value to the correct type to the caller of accept().
+
   writer << "struct " << baseName
          << " {\n"
-            "};\n\n";
+            "  virtual std::any accept("
+         << baseName
+         << "Visitor &visitor) = 0;\n"
+         // added virtual destructor to Expr
+         << "  virtual ~" << baseName << "() = default;\n"
+         << "};\n\n";
 
   // The AST classes
+  writer << "// GenerateAst.cpp > defineType()\n";
   for (std::string_view type : types) {
     std::string_view className = trim(split(type, ":")[0]);
     // space is added to the delimiter to allow for `std::any` in fields
