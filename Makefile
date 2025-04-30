@@ -32,7 +32,7 @@ generate: src/GenerateAst.cpp
 	./build/generate_ast src
 
 # Build and run AstPrinterDriver
-testPrint: src/AstPrinterDriver.cpp
+testPrint: tools/AstPrinterDriver.cpp
 	$(CXX) $(CXXFLAGS) -o build/AstPrinterDriver $<
 	./build/AstPrinterDriver
 
