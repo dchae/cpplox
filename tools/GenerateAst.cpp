@@ -1,5 +1,5 @@
-#include <algorithm>
-#include <cctype>
+#include <algorithm> // std::find_if_not
+#include <cctype> // std::isspace
 #include <fstream>
 #include <iostream> // std::ofstream writer
 #include <sstream>  // std::ostringstream
@@ -148,7 +148,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
             "\n"
             "#include \"Token.h\"\n"
             "#include <any>\n"
-            "#include <memory>\n"
+            "#include <memory> // std::shared_ptr\n"
             "#include <utility> // std::move\n"
             "#include <vector>\n"
             "\n";

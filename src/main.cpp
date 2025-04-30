@@ -1,4 +1,6 @@
+#include "../tools/AstPrinter.h"
 #include "Error.h"
+#include "Parser.h"
 #include "Scanner.h"
 #include <cstring>
 #include <fstream>
@@ -25,13 +27,13 @@ void run(std::string_view source) {
   Scanner scanner = Scanner(source);
   std::vector<Token> tokens = scanner.scanTokens();
 
-  if (tokens.empty())
+  Parser parser = Parser(tokens);
+  std::shared_ptr<Expr> expression = parser.parse();
+
+  if (hadError)
     return;
 
-  // just print the tokens for now
-  for (const Token &token : tokens) {
-    std::cout << token.toString() << "\n";
-  }
+  std::cout << AstPrinter().print(expression) << "\n";
 }
 
 void runFile(const std::string_view path) {

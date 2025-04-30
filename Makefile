@@ -27,7 +27,8 @@ clean:
 	rm -f $(TARGET)
 
 # Build and run generate_ast
-generate: src/GenerateAst.cpp
+# TODO: pipeline this into normal build process
+generate: tools/GenerateAst.cpp
 	$(CXX) $(CXXFLAGS) -o build/generate_ast $<
 	./build/generate_ast src
 

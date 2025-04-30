@@ -174,7 +174,7 @@ private:
   bool match(char expected) {
     if (isAtEnd())
       return false;
-    if (source[current] != expected)
+    if (source.at(current) != expected)
       return false;
 
     current++;
@@ -184,13 +184,13 @@ private:
   char peek() {
     if (isAtEnd())
       return '\0';
-    return source[current];
+    return source.at(current);
   }
 
   char peekNext() {
     if (current + 1 >= source.size())
       return '\0';
-    return source[current + 1];
+    return source.at(current + 1);
   }
 
   bool isAlpha(char c) {
@@ -203,7 +203,7 @@ private:
 
   bool isAtEnd() { return current >= source.size(); }
 
-  char advance() { return source[current++]; }
+  char advance() { return source.at(current++); }
 
   void addToken(TokenType type) { addToken(type, nullptr); }
 
