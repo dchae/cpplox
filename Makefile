@@ -1,58 +1,77 @@
-# Compiler and flags
+# Variables
 CXX := clang++
 CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wshadow
 CPPFLAGS := -MMD
-
 COMPILE := $(CXX) $(CXXFLAGS) $(CPPFLAGS)
 
-# Project files
-SRCS := src/main.cpp tools/AstPrinterDriver.cpp tools/GenerateAst.cpp
-DEPS := $(SRCS:.cpp=.d)
+# Source files
+LOX_SRCS := $(wildcard src/*.cpp)
+TOOL_SRCS := $(wildcard tools/*.cpp)
+SRCS := $(LOX_SRCS) $(TOOL_SRCS)
+
+# Dependency files
+LOX_DEPS := $(LOX_SRCS:src/%.cpp=build/%.d)
+TOOL_DEPS := $(TOOL_SRCS:tools/%.cpp=build/%.d)
+DEPS := $(LOX_DEPS) $(TOOL_DEPS)
+
+# Object files
+LOX_OBJS := $(LOX_SRCS:src/%.cpp=build/%.o)
+TOOL_OBJS := $(TOOL_SRCS:tools/%.cpp=build/%.o)
+
+# Executable paths
 TARGET := build/cpplox
 
-# Default target
-cpplox: src/Expr.h build/cpplox.o
-	$(COMPILE) build/cpplox.o -o $(TARGET)
+# include auto-generated dependencies
+-include $(DEPS)
 
-# Run the program
-run: cpplox
-	./$(TARGET)
+# Default target (build/cpplox)
+# Expr.h and all Lox object files (cpplox.o,...) are prerequisites
+$(TARGET): src/Expr.h $(LOX_OBJS) 
+	$(COMPILE) $(LOX_OBJS) -o $(TARGET)
 
 # Build GenerateAst
-generate_ast: build/GenerateAst.o
-	$(COMPILE) $< -o build/generate_ast
+build/generate_ast: build/GenerateAst.o
+	$(COMPILE) $< -o $@
 
 # Run GenerateAst (generate Expr.h)
-Expr.h: generate_ast
+src/Expr.h: build/generate_ast
 	./build/generate_ast src
 
 # Build AstPrinterDriver
-ast_printer: src/Expr.h build/AstPrinterDriver.o
-	$(COMPILE) build/AstPrinterDriver.o -o build/$@
+build/ast_printer: src/Expr.h build/AstPrinterDriver.o
+	$(COMPILE) build/AstPrinterDriver.o -o $@
 
-# Build object files
+# Build src/ object files
 build/%.o: src/%.cpp
 	$(COMPILE) -c $< -o $@
 
+# Build tools/ object files
 build/%.o: tools/%.cpp
 	$(COMPILE) -c $< -o $@
 
--include $(DEPS)
+# Run the program
+run: $(TARGET)
+	./$(TARGET)
+
+# Tests
+.PHONY: test-expressions
+test-expressions: $(TARGET)
+	@echo "testing cpplox with test-expressions.lox ..."
+	@$(TARGET) tests/test-expressions.lox 2>&1 | diff -u --color tests/test-expressions.lox.expected -;
+
+
+.PHONY: test-expressions2
+test-expressions2: $(TARGET) 
+	@echo "testing cpplox with test-expressions2.lox ..."
+	@$(TARGET) tests/test-expressions2.lox | diff -u --color tests/test-expressions2.lox.expected -;
 
 # Clean build files
 .PHONY: clean
 clean:
 	rm -f build/*
 
-.PHONY: test-expressions
-test-expressions:
-	@make $(TARGET) >/dev/null
-	@echo "testing cpplox with test-expressions.lox ..."
-	@./build/cpplox tests/test-expressions.lox 2>&1 | diff -u --color tests/test-expressions.lox.expected -;
-
-
-.PHONY: test-expressions2
-test-expressions2:
-	@make $(TARGET) >/dev/null
-	@echo "testing cpplox with test-expressions2.lox ..."
-	@./build/cpplox tests/test-expressions2.lox | diff -u --color tests/test-expressions2.lox.expected -;
+# Aliases
+.PHONY: generate_ast ast_printer all
+ast: src/Expr.h
+ast_printer: build/ast_printer
+all: $(TARGET)
