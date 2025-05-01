@@ -24,19 +24,33 @@ test: $(TARGET)
 
 # Clean build files
 clean:
-	rm -f $(TARGET)
+	rm -f build/*
 
 # Build and run generate_ast
 # TODO: pipeline this into normal build process
-generate: tools/GenerateAst.cpp
+generate_ast: tools/GenerateAst.cpp
 	$(CXX) $(CXXFLAGS) -o build/generate_ast $<
 	./build/generate_ast src
+	rm -f build/generate_ast
 
 # Build and run AstPrinterDriver
-testPrint: tools/AstPrinterDriver.cpp
+ast_printer: tools/AstPrinterDriver.cpp
 	$(CXX) $(CXXFLAGS) -o build/AstPrinterDriver $<
-	./build/AstPrinterDriver
+	# ./build/AstPrinterDriver
 
 # Default target
 .PHONY: all clean run brun
 all: $(TARGET)
+
+# .PHONY: test-expressions
+# test-expressions:
+# 	@make $(TARGET) >/dev/null
+# 	@echo "testing jlox with test-expressions.lox ..."
+# 	@./jlox tests/test-expressions.lox 2>&1 | diff -u --color tests/test-expressions.lox.expected -;
+#
+#
+# .PHONY: test-expressions2
+# test-expressions2:
+# 	@make jlox >/dev/null
+# 	@echo "testing jlox with test-expressions2.lox ..."
+# 	@./jlox tests/test-expressions2.lox | diff -u --color tests/test-expressions2.lox.expected -;
