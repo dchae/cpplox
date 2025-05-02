@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Environment.h"
 #include "Error.h"
 #include "Expr.h"
 #include "RuntimeError.h"
@@ -11,6 +12,8 @@
 #include <vector>
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
+  std::shared_ptr<Environment> environment{new Environment};
+
 public:
   void interpret(const std::vector<std::shared_ptr<Stmt>> &statements) {
     try {
@@ -42,6 +45,16 @@ public:
     std::any value = evaluate(stmt->expression);
     std::cout << stringify(value) << "\n";
 
+    return {};
+  }
+
+  std::any visitVarStmt(std::shared_ptr<Var> stmt) override {
+    std::any value = nullptr;
+    if (stmt->initializer != nullptr) {
+      value = evaluate(stmt->initializer);
+    }
+
+    environment->define(stmt->name.lexeme, std::move(value));
     return {};
   }
 
@@ -119,6 +132,10 @@ public:
 
     // Unreachable
     return {};
+  }
+
+  std::any visitVariableExpr(std::shared_ptr<Variable> expr) override {
+    return environment->get(expr->name);
   }
 
 private:
