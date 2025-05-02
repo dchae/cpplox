@@ -58,6 +58,12 @@ public:
     return {};
   }
 
+  std::any visitAssignExpr(std::shared_ptr<Assign> expr) override {
+    std::any value = evaluate(expr->value);
+    environment->assign(expr->name, value);
+    return value;
+  }
+
   // Expression visitor implementations
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
     return expr->value;

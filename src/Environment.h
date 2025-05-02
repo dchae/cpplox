@@ -19,6 +19,14 @@ public:
     throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
   }
 
+  void assign(const Token &name, std::any value) {
+    if (values.contains(name.lexeme)) {
+      values[name.lexeme] = std::move(value);
+      return;
+    }
+
+    throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+  }
   void define(const std::string &name, std::any value) {
     values[name] = std::move(value);
   }

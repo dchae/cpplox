@@ -30,8 +30,7 @@ public:
   }
 
 private:
-  std::shared_ptr<Expr> expression() { return assignment(); }
-
+  // Statements
   std::shared_ptr<Stmt> declaration() {
     try {
       if (match(VAR)) {
@@ -45,16 +44,17 @@ private:
     }
   }
 
-  std::shared_ptr<Expr> equality() {
-    std::shared_ptr<Expr> expr = comparison();
+  std::shared_ptr<Stmt> varDeclaration() {
+    Token name = consume(IDENTIFIER, "Expect variable name.");
 
-    while (match(BANG_EQUAL, EQUAL_EQUAL)) {
-      Token op = previous();
-      std::shared_ptr<Expr> right = comparison();
-      expr = std::make_shared<Binary>(expr, std::move(op), right);
+    std::shared_ptr<Expr>(initializer) = nullptr;
+    if (match(EQUAL)) {
+      initializer = expression();
     }
 
-    return expr;
+    consume(SEMICOLON, "Expect ';' after variable declaration");
+
+    return std::make_shared<Var>(std::move(name), initializer);
   }
 
   std::shared_ptr<Stmt> statement() {
@@ -71,24 +71,14 @@ private:
     return std::make_shared<Print>(value);
   }
 
-  std::shared_ptr<Stmt> varDeclaration() {
-    Token name = consume(IDENTIFIER, "Expect variable name.");
-
-    std::shared_ptr<Expr>(initializer) = nullptr;
-    if (match(EQUAL)) {
-      initializer = expression();
-    }
-
-    consume(SEMICOLON, "Expect ';' after variable declaration");
-
-    return std::make_shared<Var>(std::move(name), initializer);
-  }
-
   std::shared_ptr<Stmt> expressionStatement() {
     std::shared_ptr<Expr> expr = expression();
     consume(SEMICOLON, "Expect ';' after expression.");
     return std::make_shared<Expression>(expr);
   }
+
+  // Expressions
+  std::shared_ptr<Expr> expression() { return assignment(); }
 
   std::shared_ptr<Expr> assignment() {
     std::shared_ptr<Expr> expr = equality();
@@ -103,11 +93,26 @@ private:
       std::shared_ptr<Variable> variableExpr =
           std::dynamic_pointer_cast<Variable>(expr);
       if (variableExpr) {
+        // convert r-value expression node to l-value Assign node
         Token name = variableExpr->name;
         return std::make_shared<Assign>(std::move(name), value);
       }
 
+      // call error instead of throwing it,
+      // since there is no need to synchronize
       error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
+  }
+
+  std::shared_ptr<Expr> equality() {
+    std::shared_ptr<Expr> expr = comparison();
+
+    while (match(BANG_EQUAL, EQUAL_EQUAL)) {
+      Token op = previous();
+      std::shared_ptr<Expr> right = comparison();
+      expr = std::make_shared<Binary>(expr, std::move(op), right);
     }
 
     return expr;
@@ -188,6 +193,27 @@ private:
   }
 
   // helpers
+  bool isAtEnd() { return peek().type == END_OF_FILE; }
+
+  Token peek() { return tokens.at(current); }
+
+  Token previous() { return tokens.at(current - 1); }
+
+  Token advance() {
+    if (!isAtEnd()) {
+      current++;
+    }
+    return previous();
+  }
+
+  bool check(TokenType type) {
+    if (isAtEnd()) {
+      return false;
+    }
+
+    return tokens[current].type == type;
+  }
+
   template <class... T> bool match(T... type) {
     assert((... && std::is_same_v<T, TokenType>));
 
@@ -207,33 +233,6 @@ private:
     }
 
     throw error(peek(), message);
-  }
-
-  bool check(TokenType type) {
-    if (isAtEnd()) {
-      return false;
-    }
-
-    return tokens[current].type == type;
-  }
-
-  Token advance() {
-    if (!isAtEnd()) {
-      current++;
-    }
-    return previous();
-  }
-
-  bool isAtEnd() { return peek().type == END_OF_FILE; }
-
-  Token peek() { return tokens.at(current); }
-
-  Token previous() { return tokens.at(current - 1); }
-
-  ParseError error(const Token &token, std::string_view message) {
-    ::error(token, message);
-
-    return ParseError{""};
   }
 
   void synchronize() {
@@ -262,5 +261,11 @@ private:
 
       advance();
     }
+  }
+
+  ParseError error(const Token &token, std::string_view message) {
+    ::error(token, message);
+
+    return ParseError{""};
   }
 };
