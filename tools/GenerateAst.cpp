@@ -78,7 +78,7 @@ void defineVisitor(std::ostream &writer, std::string_view baseName,
   writer << "struct " << baseName << "Visitor {\n";
 
   for (std::string_view type : types) {
-    std::string_view typeName = trim(split(type, ":")[0]);
+    std::string_view typeName = trim(split(type, "->")[0]);
     writer << "  virtual std::any visit" << typeName << baseName
            << "(std::shared_ptr<" << typeName << "> " << toLowerCase(baseName)
            << ") = 0;\n";
@@ -159,7 +159,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
 
   // Forward declarations for AST classes (since they reference each other)
   for (std::string_view type : types) {
-    std::string_view className = trim(split(type, ": ")[0]);
+    std::string_view className = trim(split(type, "->")[0]);
     writer << "struct " << className << ";\n";
   }
   writer << "\n";
@@ -189,9 +189,8 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   // The AST classes
   writer << "// GenerateAst.cpp > defineType()\n";
   for (std::string_view type : types) {
-    std::string_view className = trim(split(type, ":")[0]);
-    // space is added to the delimiter to allow for `std::any` in fields
-    std::string_view fields = trim(split(type, ": ")[1]);
+    std::string_view className = trim(split(type, "->")[0]);
+    std::string_view fields = trim(split(type, "->")[1]);
     defineType(writer, baseName, className, fields);
   }
 }
@@ -204,18 +203,20 @@ int main(int argc, char *argv[]) {
 
   std::string outputDir = argv[1];
 
+  // delimiter has been changed to '->' (from ':')
+  // to allow for `std::any` in fields
   defineAst(outputDir, "Expr",
             {
-                "Grouping : Expr* expression",
-                "Binary   : Expr* left, Token op, Expr* right",
-                "Unary    : Token op, Expr* right",
-                "Literal  : std::any value",
+                "Grouping -> Expr* expression",
+                "Binary   -> Expr* left, Token op, Expr* right",
+                "Unary    -> Token op, Expr* right",
+                "Literal  -> std::any value",
             });
 
   defineAst(outputDir, "Stmt",
             {
-                "Expression : Expr* expression",
-                "Print      : Expr* expression",
-                "Var        : Expr* initializer",
+                "Expression -> Expr* expression",
+                "Print      -> Expr* expression",
+                "Var        -> Expr* initializer",
             });
 }
