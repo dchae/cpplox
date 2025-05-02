@@ -58,16 +58,10 @@ run: $(TARGET)
 	./$(TARGET)
 
 # Tests
-.PHONY: test-expressions
-test-expressions: $(TARGET)
-	@echo "testing cpplox with test-expressions.lox ..."
-	@$(TARGET) tests/test-expressions.lox 2>&1 | diff -u --color tests/test-expressions.lox.expected -;
-
-
-.PHONY: test-expressions2
-test-expressions2: $(TARGET) 
-	@echo "testing cpplox with test-expressions2.lox ..."
-	@$(TARGET) tests/test-expressions2.lox | diff -u --color tests/test-expressions2.lox.expected -;
+.PHONY: test
+test: $(TARGET)
+	@echo "testing cpplox with test1.lox ..."
+	@$(TARGET) tests/test1.lox 2>&1 | diff -u --color tests/test1.lox.expected -;
 
 # Clean build files
 .PHONY: clean

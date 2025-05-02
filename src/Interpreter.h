@@ -3,22 +3,49 @@
 #include "Error.h"
 #include "Expr.h"
 #include "RuntimeError.h"
+#include "Stmt.h"
 #include <any>
 #include <format> // std::format (c++20)
 #include <iostream>
 #include <memory> // std::shared_ptr
+#include <vector>
 
-class Interpreter : public ExprVisitor {
+class Interpreter : public ExprVisitor, public StmtVisitor {
 public:
-  void interpret(const std::shared_ptr<Expr> &expression) {
+  void interpret(const std::vector<std::shared_ptr<Stmt>> &statements) {
     try {
-      std::any value = evaluate(expression);
-      std::cout << stringify(value) << "\n";
+      for (const std::shared_ptr<Stmt> &statement : statements) {
+        execute(statement);
+      }
     } catch (RuntimeError error) {
       runtimeError(error);
     }
   }
 
+private:
+  std::any evaluate(const std::shared_ptr<Expr> &expr) {
+    // send expression back into the visitor implementation
+    return expr->accept(*this);
+  }
+
+  void execute(const std::shared_ptr<Stmt> &stmt) { stmt->accept(*this); }
+
+public:
+  // Statement visitor implementations
+  std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
+    evaluate(stmt->expression);
+
+    return {};
+  }
+
+  std::any visitPrintStmt(std::shared_ptr<Print> stmt) override {
+    std::any value = evaluate(stmt->expression);
+    std::cout << stringify(value) << "\n";
+
+    return {};
+  }
+
+  // Expression visitor implementations
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
     return expr->value;
   }
@@ -95,6 +122,7 @@ public:
   }
 
 private:
+  // helpers
   void checkNumberOperand(const Token &op, const std::any &operand) {
     if (operand.type() == typeid(double)) {
       return;
@@ -168,10 +196,5 @@ private:
     }
 
     return "Error in Interpreter.stringify(): unsupported object type.";
-  }
-
-  std::any evaluate(const std::shared_ptr<Expr> &expr) {
-    // send expression back into the visitor implementation
-    return expr->accept(*this);
   }
 };

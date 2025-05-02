@@ -2,6 +2,7 @@
 
 #include "Error.h"
 #include "Expr.h"
+#include "Stmt.h"
 #include "Token.h"
 #include "TokenType.h"
 #include <cassert>
@@ -19,14 +20,13 @@ class Parser {
 public:
   Parser(const std::vector<Token> &tokens) : tokens{tokens} {}
 
-  std::shared_ptr<Expr> parse() {
-    // for now, just parse single expression and return it
-    try {
-      return expression();
-    } catch (ParseError error) {
-      // for now, just exit out of panic mode
-      return nullptr;
+  std::vector<std::shared_ptr<Stmt>> parse() {
+    std::vector<std::shared_ptr<Stmt>> statements{};
+    while (!isAtEnd()) {
+      statements.push_back(statement());
     }
+
+    return statements;
   }
 
 private:
@@ -42,6 +42,26 @@ private:
     }
 
     return expr;
+  }
+
+  std::shared_ptr<Stmt> statement() {
+    if (match(PRINT)) {
+      return printStatement();
+    }
+
+    return expressionStatement();
+  }
+
+  std::shared_ptr<Stmt> printStatement() {
+    std::shared_ptr<Expr> value = expression();
+    consume(SEMICOLON, "Expect ';' after value.");
+    return std::make_shared<Print>(value);
+  }
+
+  std::shared_ptr<Stmt> expressionStatement() {
+    std::shared_ptr<Expr> expr = expression();
+    consume(SEMICOLON, "Expect ';' after expression.");
+    return std::make_shared<Expression>(expr);
   }
 
   std::shared_ptr<Expr> comparison() {

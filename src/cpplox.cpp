@@ -29,14 +29,14 @@ void run(std::string_view source) {
   std::vector<Token> tokens = scanner.scanTokens();
 
   Parser parser{tokens};
-  std::shared_ptr<Expr> expression = parser.parse();
+  std::vector<std::shared_ptr<Stmt>> statements = parser.parse();
 
   // Stop if there was a syntax error
   if (hadError) {
     return;
   }
 
-  interpreter.interpret(expression);
+  interpreter.interpret(statements);
 }
 
 void runFile(const std::string_view path) {
