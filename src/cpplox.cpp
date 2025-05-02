@@ -1,4 +1,3 @@
-#include "../tools/AstPrinter.h"
 #include "Error.h"
 #include "Interpreter.h"
 #include "Parser.h"
@@ -36,17 +35,6 @@ void run(std::string_view source) {
   if (hadError) {
     return;
   }
-
-  // // debug
-  // // print tokens
-  // std::cout << "Tokens:\n";
-  // for (const Token &token : tokens) {
-  //   std::cout << token.toString() << "\n";
-  // }
-
-  // // print syntax tree
-  // std::cout << "\nAST:\n";
-  // std::cout << AstPrinter().print(expression) << "\n";
 
   interpreter.interpret(expression);
 }

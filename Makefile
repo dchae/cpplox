@@ -37,6 +37,10 @@ build/generate_ast: build/GenerateAst.o
 src/Expr.h: build/generate_ast
 	./build/generate_ast src
 
+# Run GenerateAst (generate Stmt.h)
+src/Stmt.h: build/generate_ast
+	./build/generate_ast src
+
 # Build AstPrinterDriver
 build/ast_printer: src/Expr.h build/AstPrinterDriver.o
 	$(COMPILE) build/AstPrinterDriver.o -o $@
@@ -72,6 +76,6 @@ clean:
 
 # Aliases
 .PHONY: generate_ast ast_printer all
-ast: src/Expr.h
+ast: src/Expr.h src/Stmt.h
 ast_printer: build/ast_printer
 all: $(TARGET)

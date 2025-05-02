@@ -144,10 +144,15 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   }
 
   writer << "// GenerateAst.cpp > defineAst()\n";
-  writer << "#pragma once\n"
-            "\n"
-            "#include \"Token.h\"\n"
-            "#include <any>\n"
+  writer << "#pragma once\n\n";
+
+  if (baseName == "Expr") {
+    writer << "#include \"Token.h\"\n";
+  } else {
+    writer << "#include \"Expr.h\"\n";
+  }
+
+  writer << "#include <any>\n"
             "#include <memory>  // std::shared_ptr\n"
             "#include <utility> // std::move\n"
             "\n";
@@ -203,4 +208,7 @@ int main(int argc, char *argv[]) {
             {"Binary   : Expr* left, Token op, Expr* right",
              "Grouping : Expr* expression", "Literal  : std::any value",
              "Unary    : Token op, Expr* right"});
+
+  defineAst(outputDir, "Stmt",
+            {"Expression : Expr* expression", "Print      : Expr* expression"});
 }
