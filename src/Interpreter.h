@@ -1,12 +1,24 @@
 #pragma once
 
+#include "Error.h"
 #include "Expr.h"
 #include "RuntimeError.h"
 #include <any>
+#include <format> // std::format (c++20)
+#include <iostream>
 #include <memory> // std::shared_ptr
 
 class Interpreter : public ExprVisitor {
 public:
+  void interpret(const std::shared_ptr<Expr> &expression) {
+    try {
+      std::any value = evaluate(expression);
+      std::cout << stringify(value) << "\n";
+    } catch (RuntimeError error) {
+      runtimeError(error);
+    }
+  }
+
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
     return expr->value;
   }
@@ -33,7 +45,7 @@ public:
 
   std::any visitBinaryExpr(std::shared_ptr<Binary> expr) override {
     std::any left = evaluate(expr->left);
-    std::any right = evaluate(expr->left);
+    std::any right = evaluate(expr->right);
 
     switch (expr->op.type) {
     case BANG_EQUAL:
@@ -84,47 +96,81 @@ public:
 
 private:
   void checkNumberOperand(const Token &op, const std::any &operand) {
-    if (operand.type() == typeid(double))
+    if (operand.type() == typeid(double)) {
       return;
+    }
 
     throw RuntimeError(op, "Operand must be a number.");
   }
 
   void checkNumberOperands(const Token &op, const std::any &left,
                            const std::any &right) {
-    if (left.type() == typeid(double) && right.type() == typeid(double))
+    if (left.type() == typeid(double) && right.type() == typeid(double)) {
       return;
+    }
 
     throw RuntimeError(op, "Operands must be a number.");
   }
 
   bool isTruthy(std::any &object) {
-    if (object.type() == typeid(nullptr))
+    if (object.type() == typeid(nullptr)) {
       return false;
-    if (object.type() == typeid(bool))
+    }
+    if (object.type() == typeid(bool)) {
       return std::any_cast<bool>(object);
+    }
 
     return true;
   }
 
   bool isEqual(std::any &a, std::any &b) {
-    if (a.type() != b.type())
+    if (a.type() != b.type()) {
       return false;
+    }
 
-    if (a.type() == typeid(nullptr))
+    if (a.type() == typeid(nullptr)) {
       return true;
-    if (a.type() == typeid(bool))
+    }
+    if (a.type() == typeid(bool)) {
       return std::any_cast<bool>(a) == std::any_cast<bool>(b);
-    if (a.type() == typeid(double))
+    }
+    if (a.type() == typeid(double)) {
       // returns false for (NaN == NaN), unlike jlox
       return std::any_cast<double>(a) == std::any_cast<double>(b);
-    if (a.type() == typeid(std::string))
+    }
+    if (a.type() == typeid(std::string)) {
       return std::any_cast<std::string>(a) == std::any_cast<std::string>(b);
+    }
 
     return false;
   }
 
-  std::any evaluate(std::shared_ptr<Expr> expr) {
+  std::string stringify(std::any &object) {
+    const auto &valueType = object.type();
+
+    // Type narrowing with any_cast + converting to string
+    if (valueType == typeid(nullptr)) {
+      return "nil";
+    }
+
+    if (valueType == typeid(double)) {
+      // uses std::format (C++20) to match jlox floating point error behaviour
+      std::string text = std::format("{}", std::any_cast<double>(object));
+      return text;
+    }
+
+    if (valueType == typeid(std::string)) {
+      return std::any_cast<std::string>(object);
+    }
+
+    if (valueType == typeid(bool)) {
+      return std::any_cast<bool>(object) ? "true" : "false";
+    }
+
+    return "Error in Interpreter.stringify(): unsupported object type.";
+  }
+
+  std::any evaluate(const std::shared_ptr<Expr> &expr) {
     // send expression back into the visitor implementation
     return expr->accept(*this);
   }

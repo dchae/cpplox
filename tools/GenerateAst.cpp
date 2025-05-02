@@ -29,8 +29,8 @@ std::vector<std::string_view> split(std::string_view str,
 std::string_view trim(std::string_view str) {
   auto isspace = [](auto c) { return std::isspace(c); };
 
-  auto start = std::find_if_not(str.begin(), str.end(), isspace);
-  auto end = std::find_if_not(str.rbegin(), str.rend(), isspace).base();
+  const auto *start = std::find_if_not(str.begin(), str.end(), isspace);
+  const auto *end = std::find_if_not(str.rbegin(), str.rend(), isspace).base();
 
   return std::string_view{start, std::string_view::size_type(end - start)};
 }
@@ -52,7 +52,7 @@ std::string fix_pointer(std::string_view field) {
   std::string_view name = split(field, " ")[1];
   bool close_bracket = false;
 
-  if (type.substr(0, 12) == "std::vector<") {
+  if (type.starts_with("std::vector<")) {
     out << "std::vector<";
     type = type.substr(12, type.length() - 13); // ignore closing '>'
     close_bracket = true;
@@ -65,15 +65,16 @@ std::string fix_pointer(std::string_view field) {
     out << type;
   }
 
-  if (close_bracket)
+  if (close_bracket) {
     out << ">";
+  }
   out << " " << name;
 
   return out.str();
 }
 
 void defineVisitor(std::ostream &writer, std::string_view baseName,
-                   const std::vector<std::string_view> types) {
+                   const std::vector<std::string_view> &types) {
   writer << "struct " << baseName << "Visitor {\n";
 
   for (std::string_view type : types) {
@@ -139,8 +140,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   std::ofstream writer{path};
 
   if (!writer) {
-    std::cerr << "Error: Could not open the file for writing: " << path
-              << std::endl;
+    std::cerr << "Error: Could not open the file for writing: " << path << '\n';
   }
 
   writer << "// GenerateAst.cpp > defineAst()\n";
@@ -150,7 +150,6 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
             "#include <any>\n"
             "#include <memory>  // std::shared_ptr\n"
             "#include <utility> // std::move\n"
-            "#include <vector>\n"
             "\n";
 
   // Forward declarations for AST classes (since they reference each other)
@@ -194,7 +193,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    std::cerr << "Usage: generate_ast <output_directory>" << std::endl;
+    std::cerr << "Usage: generate_ast <output_directory>" << '\n';
     std::exit(64);
   }
 

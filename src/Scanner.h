@@ -3,7 +3,6 @@
 #include "Error.h"
 #include "Token.h"
 #include "TokenType.h"
-#include <array>
 #include <map>
 #include <string>
 #include <string_view>
@@ -29,7 +28,7 @@ public:
       scanToken();
     }
 
-    tokens.push_back(Token(END_OF_FILE, "", nullptr, line));
+    tokens.emplace_back(END_OF_FILE, "", nullptr, line);
     return tokens;
   }
 
@@ -85,8 +84,9 @@ private:
     case '/':
       // ignore comments
       if (match('/')) {
-        while (peek() != '\n' && !isAtEnd())
+        while (peek() != '\n' && !isAtEnd()) {
           advance();
+        }
       } else {
         addToken(SLASH);
       }
@@ -118,8 +118,9 @@ private:
   }
 
   void identifier() {
-    while (isAlphaNumeric(peek()))
+    while (isAlphaNumeric(peek())) {
       advance();
+    }
 
     std::string text(source.substr(start, current - start));
 
@@ -135,26 +136,29 @@ private:
   }
 
   void number() {
-    while (isDigit(peek()))
+    while (isDigit(peek())) {
       advance();
+    }
 
     if (peek() == '.' && isDigit(peekNext())) {
       // Consume the '.'
       advance();
 
-      while (isDigit(peek()))
+      while (isDigit(peek())) {
         advance();
+      }
     }
 
-    std::string str_value(source.substr(start, current - start));
-    double value = std::stod(str_value);
+    std::string strValue(source.substr(start, current - start));
+    double value = std::stod(strValue);
     addToken(NUMBER, value);
   }
 
   void string() {
     while (peek() != '"' && !isAtEnd()) {
-      if (peek() == '\n')
+      if (peek() == '\n') {
         line++;
+      }
       advance();
     }
 
@@ -172,24 +176,28 @@ private:
   }
 
   bool match(char expected) {
-    if (isAtEnd())
+    if (isAtEnd()) {
       return false;
-    if (source.at(current) != expected)
+    }
+    if (source.at(current) != expected) {
       return false;
+    }
 
     current++;
     return true;
   }
 
   char peek() {
-    if (isAtEnd())
+    if (isAtEnd()) {
       return '\0';
+    }
     return source.at(current);
   }
 
   char peekNext() {
-    if (current + 1 >= source.size())
+    if (current + 1 >= source.size()) {
       return '\0';
+    }
     return source.at(current + 1);
   }
 
@@ -209,7 +217,7 @@ private:
 
   void addToken(TokenType type, std::any literal) {
     std::string text{source.substr(start, current - start)};
-    tokens.push_back(Token(type, std::move(text), std::move(literal), line));
+    tokens.emplace_back(type, std::move(text), std::move(literal), line);
   }
 };
 

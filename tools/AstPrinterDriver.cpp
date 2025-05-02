@@ -1,4 +1,5 @@
 #include "AstPrinter.h"
+#include <iostream>
 
 // should output "(* (- 123.000000) (group 45.670000))"
 int main() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 
 enum TokenType {
@@ -54,7 +55,7 @@ enum TokenType {
 };
 
 inline std::string toString(TokenType type) {
-  static const std::string strings[] = {
+  static const std::array strings{
       "LEFT_PAREN", "RIGHT_PAREN",   "LEFT_BRACE", "RIGHT_BRACE", "COMMA",
       "DOT",        "MINUS",         "PLUS",       "SEMICOLON",   "SLASH",
       "STAR",       "BANG",          "BANG_EQUAL", "EQUAL",       "EQUAL_EQUAL",

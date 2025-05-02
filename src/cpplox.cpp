@@ -1,5 +1,6 @@
 #include "../tools/AstPrinter.h"
 #include "Error.h"
+#include "Interpreter.h"
 #include "Parser.h"
 #include "Scanner.h"
 #include <cstring>
@@ -11,8 +12,7 @@
 std::string readFile(const std::string_view path) {
   std::ifstream file(path.data(), std::ios::binary);
   if (!file) {
-    std::cerr << "Error reading file: " << path << std::strerror(errno)
-              << std::endl;
+    std::cerr << "Error reading file: " << path << std::strerror(errno) << '\n';
     std::exit(74);
   }
 
@@ -23,24 +23,43 @@ std::string readFile(const std::string_view path) {
   return buffer.str();
 }
 
+static Interpreter interpreter{};
+
 void run(std::string_view source) {
-  Scanner scanner = Scanner(source);
+  Scanner scanner{source};
   std::vector<Token> tokens = scanner.scanTokens();
 
-  Parser parser = Parser(tokens);
+  Parser parser{tokens};
   std::shared_ptr<Expr> expression = parser.parse();
 
-  if (hadError)
+  // Stop if there was a syntax error
+  if (hadError) {
     return;
+  }
 
-  std::cout << AstPrinter().print(expression) << "\n";
+  // // debug
+  // // print tokens
+  // std::cout << "Tokens:\n";
+  // for (const Token &token : tokens) {
+  //   std::cout << token.toString() << "\n";
+  // }
+
+  // // print syntax tree
+  // std::cout << "\nAST:\n";
+  // std::cout << AstPrinter().print(expression) << "\n";
+
+  interpreter.interpret(expression);
 }
 
 void runFile(const std::string_view path) {
   std::string contents = readFile(path);
   run(contents);
+
   if (hadError) {
     std::exit(65);
+  }
+  if (hadRuntimeError) {
+    std::exit(70);
   }
 }
 
@@ -58,9 +77,11 @@ void runPrompt() {
 
 int main(int argc, char *argv[]) {
   if (argc > 2) {
-    std::cerr << "Usage: cpplox <filename>" << std::endl;
+    std::cerr << "Usage: cpplox <filename>" << '\n';
     return 64;
-  } else if (argc == 2) {
+  }
+
+  if (argc == 2) {
     runFile(argv[1]);
   } else {
     runPrompt();

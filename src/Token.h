@@ -16,29 +16,29 @@ public:
       : type(type), lexeme(std::move(lexeme)), literal(std::move(literal)),
         line(line) {}
 
-  std::string toString() const {
-    std::string literal_str;
+  [[nodiscard]] std::string toString() const {
+    std::string literalStr;
 
     switch (type) {
     case (IDENTIFIER):
-      literal_str = lexeme;
+      literalStr = lexeme;
       break;
     case (STRING):
-      literal_str = std::any_cast<std::string>(literal);
+      literalStr = std::any_cast<std::string>(literal);
       break;
     case (NUMBER):
-      literal_str = std::to_string(std::any_cast<double>(literal));
+      literalStr = std::to_string(std::any_cast<double>(literal));
       break;
     case (TRUE):
-      literal_str = "true";
+      literalStr = "true";
       break;
     case (FALSE):
-      literal_str = "false";
+      literalStr = "false";
       break;
     default:
-      literal_str = "nil";
+      literalStr = "nil";
     }
 
-    return ::toString(type) + " " + lexeme + " " + literal_str;
+    return ::toString(type) + " " + lexeme + " " + literalStr;
   }
 };

@@ -91,15 +91,19 @@ private:
   }
 
   std::shared_ptr<Expr> primary() {
-    if (match(FALSE))
+    if (match(FALSE)) {
       return std::make_shared<Literal>(false);
-    if (match(TRUE))
+    }
+    if (match(TRUE)) {
       return std::make_shared<Literal>(true);
-    if (match(NIL))
+    }
+    if (match(NIL)) {
       return std::make_shared<Literal>(nullptr);
+    }
 
-    if (match(NUMBER, STRING))
+    if (match(NUMBER, STRING)) {
       return std::make_shared<Literal>(previous().literal);
+    }
 
     if (match(LEFT_PAREN)) {
       std::shared_ptr<Expr> expr = expression();
@@ -125,22 +129,25 @@ private:
   }
 
   Token consume(TokenType type, std::string_view message) {
-    if (check(type))
+    if (check(type)) {
       return advance();
+    }
 
     throw error(peek(), message);
   }
 
   bool check(TokenType type) {
-    if (isAtEnd())
+    if (isAtEnd()) {
       return false;
+    }
 
     return tokens[current].type == type;
   }
 
   Token advance() {
-    if (!isAtEnd())
+    if (!isAtEnd()) {
       current++;
+    }
     return previous();
   }
 
@@ -162,8 +169,9 @@ private:
     // discard tokens until we find a statement boundary to resynchronize after
     // catching a ParseError
     while (!isAtEnd()) {
-      if (previous().type == SEMICOLON)
+      if (previous().type == SEMICOLON) {
         return;
+      }
 
       switch (peek().type) {
       case CLASS:

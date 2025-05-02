@@ -3,9 +3,9 @@
 #include "../src/Expr.h"
 #include <any>
 #include <cassert>
-#include <iostream>
 #include <sstream> // std::ostringstream
 #include <string>
+#include <utility>
 
 class AstPrinter : public ExprVisitor {
 public:
@@ -23,16 +23,19 @@ public:
   }
 
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
-    auto &value_type = expr->value.type();
+    const auto &valueType = expr->value.type();
 
     // Type narrowing with any_cast + converting to string
-    if (value_type == typeid(nullptr)) {
+    if (valueType == typeid(nullptr)) {
       return "nil";
-    } else if (value_type == typeid(std::string)) {
+    }
+    if (valueType == typeid(std::string)) {
       return std::any_cast<std::string>(expr->value);
-    } else if (value_type == typeid(double)) {
+    }
+    if (valueType == typeid(double)) {
       return std::to_string(std::any_cast<double>(expr->value));
-    } else if (value_type == typeid(bool)) {
+    }
+    if (valueType == typeid(bool)) {
       return std::any_cast<bool>(expr->value) ? "true" : "false";
     }
 
@@ -51,7 +54,7 @@ private:
 
     std::ostringstream builder;
     builder << '(' << name;
-    (..., (builder << " " << print(expr)));
+    (..., (builder << " " << print(std::move(expr))));
     builder << ")";
 
     return builder.str();
