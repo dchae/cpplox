@@ -207,10 +207,11 @@ int main(int argc, char *argv[]) {
   // to allow for `std::any` in fields
   defineAst(outputDir, "Expr",
             {
-                "Grouping -> Expr* expression",
+                "Assign   -> Token name, Expr* value",
                 "Binary   -> Expr* left, Token op, Expr* right",
-                "Unary    -> Token op, Expr* right",
+                "Grouping -> Expr* expression",
                 "Literal  -> std::any value",
+                "Unary    -> Token op, Expr* right",
                 "Variable -> Token name",
             });
 

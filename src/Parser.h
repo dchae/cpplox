@@ -6,7 +6,7 @@
 #include "Token.h"
 #include "TokenType.h"
 #include <cassert>
-#include <memory> // shared_ptr
+#include <memory> // std::shared_ptr, std::make_shared, std::dynamic_pointer_cast
 #include <vector>
 
 class Parser {
@@ -30,7 +30,7 @@ public:
   }
 
 private:
-  std::shared_ptr<Expr> expression() { return equality(); }
+  std::shared_ptr<Expr> expression() { return assignment(); }
 
   std::shared_ptr<Stmt> declaration() {
     try {
@@ -88,6 +88,29 @@ private:
     std::shared_ptr<Expr> expr = expression();
     consume(SEMICOLON, "Expect ';' after expression.");
     return std::make_shared<Expression>(expr);
+  }
+
+  std::shared_ptr<Expr> assignment() {
+    std::shared_ptr<Expr> expr = equality();
+
+    if (match(EQUAL)) {
+      Token equals = previous();
+      std::shared_ptr<Expr> value = assignment();
+
+      // if (expr points to instance of Variable)
+      // => if (dynamic cast of shared_ptr<Expr> expr to
+      //        shared_ptr<Variable> variableExpr does not fail)
+      std::shared_ptr<Variable> variableExpr =
+          std::dynamic_pointer_cast<Variable>(expr);
+      if (variableExpr) {
+        Token name = variableExpr->name;
+        return std::make_shared<Assign>(std::move(name), value);
+      }
+
+      error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
   }
 
   std::shared_ptr<Expr> comparison() {
