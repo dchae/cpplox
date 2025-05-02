@@ -8,11 +8,13 @@
 
 struct Expression;
 struct Print;
+struct Var;
 
 // GenerateAst.cpp > defineVisitor()
 struct StmtVisitor {
   virtual std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) = 0;
   virtual std::any visitPrintStmt(std::shared_ptr<Print> stmt) = 0;
+  virtual std::any visitVarStmt(std::shared_ptr<Var> stmt) = 0;
 
   virtual ~StmtVisitor() = default;
 };
@@ -43,5 +45,16 @@ struct Print : Stmt, public std::enable_shared_from_this<Print> {
   }
 
   const std::shared_ptr<Expr> expression;
+};
+
+struct Var : Stmt, public std::enable_shared_from_this<Var> {
+  Var(std::shared_ptr<Expr> initializer)
+      : initializer{std::move(initializer)} {}
+
+  std::any accept(StmtVisitor &visitor) override {
+    return visitor.visitVarStmt(shared_from_this());
+  }
+
+  const std::shared_ptr<Expr> initializer;
 };
 
