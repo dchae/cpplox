@@ -217,6 +217,6 @@ int main(int argc, char *argv[]) {
             {
                 "Expression -> Expr* expression",
                 "Print      -> Expr* expression",
-                "Var        -> Expr* initializer",
+                "Var        -> Token name",
             });
 }
