@@ -76,8 +76,8 @@ public:
         return std::any_cast<double>(left) + std::any_cast<double>(right);
       }
 
-      throw RuntimeError(expr->op,
-                         "Operands must be two numbers or two strings.");
+      throw RuntimeError(
+          expr->op, "Operands must be both numbers or at least one string.");
     case SLASH:
       checkNumberOperands(expr->op, left, right);
       return std::any_cast<double>(left) / std::any_cast<double>(right);
