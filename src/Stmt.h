@@ -48,13 +48,14 @@ struct Print : Stmt, public std::enable_shared_from_this<Print> {
 };
 
 struct Var : Stmt, public std::enable_shared_from_this<Var> {
-  Var(Token name)
-      : name{std::move(name)} {}
+  Var(Token name, std::shared_ptr<Expr> initializer)
+      : name{std::move(name)}, initializer{std::move(initializer)} {}
 
   std::any accept(StmtVisitor &visitor) override {
     return visitor.visitVarStmt(shared_from_this());
   }
 
   const Token name;
+  const std::shared_ptr<Expr> initializer;
 };
 

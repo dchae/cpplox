@@ -211,12 +211,13 @@ int main(int argc, char *argv[]) {
                 "Binary   -> Expr* left, Token op, Expr* right",
                 "Unary    -> Token op, Expr* right",
                 "Literal  -> std::any value",
+                "Variable -> Token name",
             });
 
   defineAst(outputDir, "Stmt",
             {
                 "Expression -> Expr* expression",
                 "Print      -> Expr* expression",
-                "Var        -> Token name",
+                "Var        -> Token name, Expr* initializer",
             });
 }

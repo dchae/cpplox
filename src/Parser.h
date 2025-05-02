@@ -23,7 +23,7 @@ public:
   std::vector<std::shared_ptr<Stmt>> parse() {
     std::vector<std::shared_ptr<Stmt>> statements{};
     while (!isAtEnd()) {
-      statements.push_back(statement());
+      statements.push_back(declaration());
     }
 
     return statements;
@@ -31,6 +31,19 @@ public:
 
 private:
   std::shared_ptr<Expr> expression() { return equality(); }
+
+  std::shared_ptr<Stmt> declaration() {
+    try {
+      if (match(VAR)) {
+        return varDeclaration();
+      }
+
+      return statement();
+    } catch (ParseError error) {
+      synchronize();
+      return nullptr;
+    }
+  }
 
   std::shared_ptr<Expr> equality() {
     std::shared_ptr<Expr> expr = comparison();
@@ -56,6 +69,19 @@ private:
     std::shared_ptr<Expr> value = expression();
     consume(SEMICOLON, "Expect ';' after value.");
     return std::make_shared<Print>(value);
+  }
+
+  std::shared_ptr<Stmt> varDeclaration() {
+    Token name = consume(IDENTIFIER, "Expect variable name.");
+
+    std::shared_ptr<Expr>(initializer) = nullptr;
+    if (match(EQUAL)) {
+      initializer = expression();
+    }
+
+    consume(SEMICOLON, "Expect ';' after variable declaration");
+
+    return std::make_shared<Var>(std::move(name), initializer);
   }
 
   std::shared_ptr<Stmt> expressionStatement() {
@@ -123,6 +149,10 @@ private:
 
     if (match(NUMBER, STRING)) {
       return std::make_shared<Literal>(previous().literal);
+    }
+
+    if (match(IDENTIFIER)) {
+      return std::make_shared<Variable>(previous());
     }
 
     if (match(LEFT_PAREN)) {
