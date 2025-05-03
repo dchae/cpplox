@@ -147,16 +147,16 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   writer << "#pragma once\n\n";
 
   if (baseName == "Expr") {
-    writer << "#include \"Token.h\"\n";
+    writer << "#include \"Token.h\"\n"
+              "#include <any>\n"
+              "#include <memory>  // std::shared_ptr\n"
+              "#include <utility> // std::move\n"
+              "\n";
   } else {
-    writer << "#include \"Expr.h\"\n";
+    writer << "#include \"Expr.h\"\n"
+              "#include <vector>\n"
+              "\n";
   }
-
-  writer << "#include <any>\n"
-            "#include <memory>  // std::shared_ptr\n"
-            "#include <utility> // std::move\n"
-            "#include <vector>\n"
-            "\n";
 
   // Forward declarations for AST classes (since they reference each other)
   for (std::string_view type : types) {
@@ -212,15 +212,18 @@ int main(int argc, char *argv[]) {
                 "Binary   -> Expr* left, Token op, Expr* right",
                 "Grouping -> Expr* expression",
                 "Literal  -> std::any value",
+                "Logical  -> Expr* left, Token op, Expr* right",
                 "Unary    -> Token op, Expr* right",
                 "Variable -> Token name",
             });
 
-  defineAst(outputDir, "Stmt",
-            {
-                "Block      -> std::vector<Stmt*> statements",
-                "Expression -> Expr* expression",
-                "Print      -> Expr* expression",
-                "Var        -> Token name, Expr* initializer",
-            });
+  defineAst(
+      outputDir, "Stmt",
+      {
+          "Block      -> std::vector<Stmt*> statements",
+          "Expression -> Expr* expression",
+          "If         -> Expr* condition, Stmt* thenBranch, Stmt* elseBranch",
+          "Print      -> Expr* expression",
+          "Var        -> Token name, Expr* initializer",
+      });
 }

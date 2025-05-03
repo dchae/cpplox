@@ -65,6 +65,16 @@ public:
     return {};
   }
 
+  std::any visitIfStmt(std::shared_ptr<If> stmt) override {
+    if (isTruthy(evaluate(stmt->condition))) {
+      execute(stmt->thenBranch);
+    } else if (stmt->elseBranch != nullptr) {
+      execute(stmt->elseBranch);
+    }
+
+    return {};
+  }
+
   std::any visitPrintStmt(std::shared_ptr<Print> stmt) override {
     std::any value = evaluate(stmt->expression);
     std::cout << stringify(value) << "\n";
@@ -91,6 +101,22 @@ public:
   // Expression visitor implementations
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
     return expr->value;
+  }
+
+  std::any visitLogicalExpr(std::shared_ptr<Logical> expr) override {
+    std::any left = evaluate(expr->left);
+
+    if (expr->op.type == OR) {
+      if (isTruthy(left)) {
+        return left;
+      }
+    } else {
+      if (!isTruthy(left)) {
+        return left;
+      }
+    }
+
+    return evaluate(expr->right);
   }
 
   std::any visitGroupingExpr(std::shared_ptr<Grouping> expr) override {
@@ -187,7 +213,7 @@ private:
     throw RuntimeError(op, "Operands must be a number.");
   }
 
-  bool isTruthy(std::any &object) {
+  bool isTruthy(const std::any &object) {
     if (object.type() == typeid(nullptr)) {
       return false;
     }
