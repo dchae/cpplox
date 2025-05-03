@@ -9,6 +9,7 @@
 #include <format> // std::format (c++20)
 #include <iostream>
 #include <memory> // std::shared_ptr
+#include <utility>
 #include <vector>
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
@@ -33,8 +34,31 @@ private:
 
   void execute(const std::shared_ptr<Stmt> &stmt) { stmt->accept(*this); }
 
+  void executeBlock(const std::vector<std::shared_ptr<Stmt>> &statements,
+                    std::shared_ptr<Environment> env) {
+    std::shared_ptr<Environment> previous = this->environment;
+
+    try {
+      this->environment = std::move(env);
+
+      for (const std::shared_ptr<Stmt> &statement : statements) {
+        execute(statement);
+      }
+    } catch (...) {
+      this->environment = previous;
+      throw;
+    }
+
+    this->environment = previous;
+  }
+
 public:
   // Statement visitor implementations
+  std::any visitBlockStmt(const std::shared_ptr<Block> stmt) override {
+    executeBlock(stmt->statements, std::make_shared<Environment>(environment));
+    return {};
+  }
+
   std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
     evaluate(stmt->expression);
 

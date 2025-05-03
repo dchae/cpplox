@@ -155,6 +155,7 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
   writer << "#include <any>\n"
             "#include <memory>  // std::shared_ptr\n"
             "#include <utility> // std::move\n"
+            "#include <vector>\n"
             "\n";
 
   // Forward declarations for AST classes (since they reference each other)
@@ -217,6 +218,7 @@ int main(int argc, char *argv[]) {
 
   defineAst(outputDir, "Stmt",
             {
+                "Block      -> std::vector<Stmt*> statements",
                 "Expression -> Expr* expression",
                 "Print      -> Expr* expression",
                 "Var        -> Token name, Expr* initializer",

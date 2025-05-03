@@ -5,13 +5,16 @@
 #include <any>
 #include <memory>  // std::shared_ptr
 #include <utility> // std::move
+#include <vector>
 
+struct Block;
 struct Expression;
 struct Print;
 struct Var;
 
 // GenerateAst.cpp > defineVisitor()
 struct StmtVisitor {
+  virtual std::any visitBlockStmt(std::shared_ptr<Block> stmt) = 0;
   virtual std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) = 0;
   virtual std::any visitPrintStmt(std::shared_ptr<Print> stmt) = 0;
   virtual std::any visitVarStmt(std::shared_ptr<Var> stmt) = 0;
@@ -25,6 +28,17 @@ struct Stmt {
 };
 
 // GenerateAst.cpp > defineType()
+struct Block : Stmt, public std::enable_shared_from_this<Block> {
+  Block(std::vector<std::shared_ptr<Stmt>> statements)
+      : statements{std::move(statements)} {}
+
+  std::any accept(StmtVisitor &visitor) override {
+    return visitor.visitBlockStmt(shared_from_this());
+  }
+
+  const std::vector<std::shared_ptr<Stmt>> statements;
+};
+
 struct Expression : Stmt, public std::enable_shared_from_this<Expression> {
   Expression(std::shared_ptr<Expr> expression)
       : expression{std::move(expression)} {}

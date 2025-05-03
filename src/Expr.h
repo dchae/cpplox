@@ -5,6 +5,7 @@
 #include <any>
 #include <memory>  // std::shared_ptr
 #include <utility> // std::move
+#include <vector>
 
 struct Assign;
 struct Binary;

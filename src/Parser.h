@@ -61,6 +61,9 @@ private:
     if (match(PRINT)) {
       return printStatement();
     }
+    if (match(LEFT_BRACE)) {
+      return std::make_shared<Block>(block());
+    }
 
     return expressionStatement();
   }
@@ -75,6 +78,17 @@ private:
     std::shared_ptr<Expr> expr = expression();
     consume(SEMICOLON, "Expect ';' after expression.");
     return std::make_shared<Expression>(expr);
+  }
+
+  std::vector<std::shared_ptr<Stmt>> block() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+      statements.push_back(declaration());
+    }
+
+    consume(RIGHT_BRACE, "Expect '}' after block.");
+    return statements;
   }
 
   // Expressions
