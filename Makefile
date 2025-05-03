@@ -1,4 +1,5 @@
 # Variables
+ARGS ?= # Default empty args
 CXX := clang++
 CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wshadow
 CPPFLAGS := -MMD
@@ -55,7 +56,7 @@ build/%.o: tools/%.cpp
 
 # Run the program
 run: $(TARGET)
-	./$(TARGET)
+	./$(TARGET) $(ARGS)
 
 # Tests
 .PHONY: test
