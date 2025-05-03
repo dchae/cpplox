@@ -54,14 +54,13 @@ private:
 
 public:
   // Statement visitor implementations
-  std::any visitBlockStmt(const std::shared_ptr<Block> stmt) override {
-    executeBlock(stmt->statements, std::make_shared<Environment>(environment));
-    return {};
-  }
+  std::any visitVarStmt(std::shared_ptr<Var> stmt) override {
+    std::any value = nullptr;
+    if (stmt->initializer != nullptr) {
+      value = evaluate(stmt->initializer);
+    }
 
-  std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
-    evaluate(stmt->expression);
-
+    environment->define(stmt->name.lexeme, std::move(value));
     return {};
   }
 
@@ -82,25 +81,30 @@ public:
     return {};
   }
 
-  std::any visitVarStmt(std::shared_ptr<Var> stmt) override {
-    std::any value = nullptr;
-    if (stmt->initializer != nullptr) {
-      value = evaluate(stmt->initializer);
+  std::any visitWhileStmt(std::shared_ptr<While> stmt) override {
+    while (isTruthy(evaluate(stmt->condition))) {
+      execute(stmt->body);
     }
 
-    environment->define(stmt->name.lexeme, std::move(value));
     return {};
   }
 
+  std::any visitBlockStmt(const std::shared_ptr<Block> stmt) override {
+    executeBlock(stmt->statements, std::make_shared<Environment>(environment));
+    return {};
+  }
+
+  std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
+    evaluate(stmt->expression);
+
+    return {};
+  }
+
+  // Expression visitor implementations
   std::any visitAssignExpr(std::shared_ptr<Assign> expr) override {
     std::any value = evaluate(expr->value);
     environment->assign(expr->name, value);
     return value;
-  }
-
-  // Expression visitor implementations
-  std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
-    return expr->value;
   }
 
   std::any visitLogicalExpr(std::shared_ptr<Logical> expr) override {
@@ -117,26 +121,6 @@ public:
     }
 
     return evaluate(expr->right);
-  }
-
-  std::any visitGroupingExpr(std::shared_ptr<Grouping> expr) override {
-    return evaluate(expr->expression);
-  }
-
-  std::any visitUnaryExpr(std::shared_ptr<Unary> expr) override {
-    std::any right = evaluate(expr->right);
-
-    switch (expr->op.type) {
-    case MINUS:
-      checkNumberOperand(expr->op, right);
-      return -std::any_cast<double>(right);
-    case BANG:
-      return !isTruthy(right);
-
-    default:
-      // Unreachable
-      return {};
-    }
   }
 
   std::any visitBinaryExpr(std::shared_ptr<Binary> expr) override {
@@ -188,6 +172,30 @@ public:
 
     // Unreachable
     return {};
+  }
+
+  std::any visitUnaryExpr(std::shared_ptr<Unary> expr) override {
+    std::any right = evaluate(expr->right);
+
+    switch (expr->op.type) {
+    case MINUS:
+      checkNumberOperand(expr->op, right);
+      return -std::any_cast<double>(right);
+    case BANG:
+      return !isTruthy(right);
+
+    default:
+      // Unreachable
+      return {};
+    }
+  }
+
+  std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
+    return expr->value;
+  }
+
+  std::any visitGroupingExpr(std::shared_ptr<Grouping> expr) override {
+    return evaluate(expr->expression);
   }
 
   std::any visitVariableExpr(std::shared_ptr<Variable> expr) override {

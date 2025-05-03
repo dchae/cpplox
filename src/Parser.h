@@ -64,6 +64,9 @@ private:
     if (match(PRINT)) {
       return printStatement();
     }
+    if (match(WHILE)) {
+      return whileStatement();
+    }
     if (match(LEFT_BRACE)) {
       return std::make_shared<Block>(block());
     }
@@ -91,10 +94,13 @@ private:
     return std::make_shared<Print>(value);
   }
 
-  std::shared_ptr<Stmt> expressionStatement() {
-    std::shared_ptr<Expr> expr = expression();
-    consume(SEMICOLON, "Expect ';' after expression.");
-    return std::make_shared<Expression>(expr);
+  std::shared_ptr<Stmt> whileStatement() {
+    consume(LEFT_PAREN, "Expect, '(' after 'while'.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(RIGHT_PAREN, "Expect, ')' after condition.");
+    std::shared_ptr<Stmt> body = statement();
+
+    return std::make_shared<While>(condition, body);
   }
 
   std::vector<std::shared_ptr<Stmt>> block() {
@@ -106,6 +112,12 @@ private:
 
     consume(RIGHT_BRACE, "Expect '}' after block.");
     return statements;
+  }
+
+  std::shared_ptr<Stmt> expressionStatement() {
+    std::shared_ptr<Expr> expr = expression();
+    consume(SEMICOLON, "Expect ';' after expression.");
+    return std::make_shared<Expression>(expr);
   }
 
   // Expressions
