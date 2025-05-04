@@ -276,7 +276,38 @@ private:
       return std::make_shared<Unary>(std::move(op), right);
     }
 
-    return primary();
+    return call();
+  }
+
+  std::shared_ptr<Expr> finishCall(std::shared_ptr<Expr> callee) {
+    std::vector<std::shared_ptr<Expr>> arguments;
+    if (!check(RIGHT_PAREN)) {
+      do {
+        if (arguments.size() >= 255) {
+          error(peek(), "Can't have more than 255 arguments.");
+        }
+        arguments.push_back(expression());
+      } while (match(COMMA));
+    }
+
+    Token paren = consume(RIGHT_PAREN, "Expect ')' after arguments.");
+
+    return std::make_shared<Call>(callee, std::move(paren),
+                                  std::move(arguments));
+  }
+
+  std::shared_ptr<Expr> call() {
+    std::shared_ptr<Expr> expr = primary();
+
+    while (true) {
+      if (match(LEFT_PAREN)) {
+        expr = finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
   }
 
   std::shared_ptr<Expr> primary() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Callable.h"
 #include "Environment.h"
 #include "Error.h"
 #include "Expr.h"
@@ -188,6 +189,22 @@ public:
       // Unreachable
       return {};
     }
+  }
+
+  std::any visitCallExpr(std::shared_ptr<Call> expr) override {
+    std::any callee = evaluate(expr->callee);
+
+    std::vector<std::any> arguments{};
+    for (const std::shared_ptr<Expr> &argument : expr->arguments) {
+      arguments.push_back(evaluate(argument));
+    }
+
+    if (callee.type() != typeid(std::shared_ptr<Callable>)) {
+      throw RuntimeError{expr->paren, "Can only call functions and classes."};
+    }
+
+    std::shared_ptr<Callable> function;
+    return function->call(*this, std::move(arguments));
   }
 
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {

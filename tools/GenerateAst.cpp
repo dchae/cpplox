@@ -151,10 +151,10 @@ void defineAst(const std::string &outputDir, const std::string &baseName,
               "#include <any>\n"
               "#include <memory>  // std::shared_ptr\n"
               "#include <utility> // std::move\n"
+              "#include <vector>\n"
               "\n";
   } else {
     writer << "#include \"Expr.h\"\n"
-              "#include <vector>\n"
               "\n";
   }
 
@@ -206,16 +206,18 @@ int main(int argc, char *argv[]) {
 
   // delimiter has been changed to '->' (from ':')
   // to allow for `std::any` in fields
-  defineAst(outputDir, "Expr",
-            {
-                "Assign   -> Token name, Expr* value",
-                "Binary   -> Expr* left, Token op, Expr* right",
-                "Grouping -> Expr* expression",
-                "Literal  -> std::any value",
-                "Logical  -> Expr* left, Token op, Expr* right",
-                "Unary    -> Token op, Expr* right",
-                "Variable -> Token name",
-            });
+  defineAst(
+      outputDir, "Expr",
+      {
+          "Assign   -> Token name, Expr* value",
+          "Binary   -> Expr* left, Token op, Expr* right",
+          "Call     -> Expr* callee, Token paren, std::vector<Expr*> arguments",
+          "Grouping -> Expr* expression",
+          "Literal  -> std::any value",
+          "Logical  -> Expr* left, Token op, Expr* right",
+          "Unary    -> Token op, Expr* right",
+          "Variable -> Token name",
+      });
 
   defineAst(
       outputDir, "Stmt",

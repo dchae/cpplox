@@ -5,9 +5,11 @@
 #include <any>
 #include <memory>  // std::shared_ptr
 #include <utility> // std::move
+#include <vector>
 
 struct Assign;
 struct Binary;
+struct Call;
 struct Grouping;
 struct Literal;
 struct Logical;
@@ -18,6 +20,7 @@ struct Variable;
 struct ExprVisitor {
   virtual std::any visitAssignExpr(std::shared_ptr<Assign> expr) = 0;
   virtual std::any visitBinaryExpr(std::shared_ptr<Binary> expr) = 0;
+  virtual std::any visitCallExpr(std::shared_ptr<Call> expr) = 0;
   virtual std::any visitGroupingExpr(std::shared_ptr<Grouping> expr) = 0;
   virtual std::any visitLiteralExpr(std::shared_ptr<Literal> expr) = 0;
   virtual std::any visitLogicalExpr(std::shared_ptr<Logical> expr) = 0;
@@ -56,6 +59,19 @@ struct Binary : Expr, public std::enable_shared_from_this<Binary> {
   const std::shared_ptr<Expr> left;
   const Token op;
   const std::shared_ptr<Expr> right;
+};
+
+struct Call : Expr, public std::enable_shared_from_this<Call> {
+  Call(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
+      : callee{std::move(callee)}, paren{std::move(paren)}, arguments{std::move(arguments)} {}
+
+  std::any accept(ExprVisitor &visitor) override {
+    return visitor.visitCallExpr(shared_from_this());
+  }
+
+  const std::shared_ptr<Expr> callee;
+  const Token paren;
+  const std::vector<std::shared_ptr<Expr>> arguments;
 };
 
 struct Grouping : Expr, public std::enable_shared_from_this<Grouping> {
