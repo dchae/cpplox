@@ -5,6 +5,7 @@
 
 struct Block;
 struct Expression;
+struct Function;
 struct If;
 struct Print;
 struct Var;
@@ -14,6 +15,7 @@ struct While;
 struct StmtVisitor {
   virtual std::any visitBlockStmt(std::shared_ptr<Block> stmt) = 0;
   virtual std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) = 0;
+  virtual std::any visitFunctionStmt(std::shared_ptr<Function> stmt) = 0;
   virtual std::any visitIfStmt(std::shared_ptr<If> stmt) = 0;
   virtual std::any visitPrintStmt(std::shared_ptr<Print> stmt) = 0;
   virtual std::any visitVarStmt(std::shared_ptr<Var> stmt) = 0;
@@ -48,6 +50,19 @@ struct Expression : Stmt, public std::enable_shared_from_this<Expression> {
   }
 
   const std::shared_ptr<Expr> expression;
+};
+
+struct Function : Stmt, public std::enable_shared_from_this<Function> {
+  Function(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body)
+      : name{std::move(name)}, params{std::move(params)}, body{std::move(body)} {}
+
+  std::any accept(StmtVisitor &visitor) override {
+    return visitor.visitFunctionStmt(shared_from_this());
+  }
+
+  const Token name;
+  const std::vector<Token> params;
+  const std::vector<std::shared_ptr<Stmt>> body;
 };
 
 struct If : Stmt, public std::enable_shared_from_this<If> {

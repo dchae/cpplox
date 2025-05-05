@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Callable.h"
 #include "Environment.h"
 #include "Error.h"
 #include "Expr.h"
+#include "LoxCallable.h"
+#include "LoxFunction.h"
 #include "RuntimeError.h"
 #include "Stmt.h"
 #include <any>
@@ -13,10 +14,32 @@
 #include <utility>
 #include <vector>
 
+class NativeClock : public LoxCallable {
+public:
+  size_t arity() override { return 0; };
+
+  std::any call(Interpreter &interpreter,
+                std::vector<std::any> arguments) override {
+    auto ticks = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration<double>{ticks}.count() / 1000.0;
+  }
+
+  std::string toString() override { return "<native fn>"; }
+};
+
 class Interpreter : public ExprVisitor, public StmtVisitor {
-  std::shared_ptr<Environment> environment{new Environment};
+  friend class LoxFunction;
 
 public:
+  std::shared_ptr<Environment> globals{new Environment};
+
+private:
+  std::shared_ptr<Environment> environment = globals;
+
+public:
+  // TODO: Try to refactor NativeClock implementation
+  Interpreter() { globals->define("clock", std::shared_ptr<NativeClock>{}); }
+
   void interpret(const std::vector<std::shared_ptr<Stmt>> &statements) {
     try {
       for (const std::shared_ptr<Stmt> &statement : statements) {
@@ -97,6 +120,13 @@ public:
 
   std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
     evaluate(stmt->expression);
+
+    return {};
+  }
+
+  std::any visitFunctionStmt(std::shared_ptr<Function> stmt) override {
+    std::shared_ptr<LoxFunction> function = std::make_shared<LoxFunction>(stmt);
+    environment->define(stmt->name.lexeme, function);
 
     return {};
   }
@@ -199,11 +229,19 @@ public:
       arguments.push_back(evaluate(argument));
     }
 
-    if (callee.type() != typeid(std::shared_ptr<Callable>)) {
+    std::shared_ptr<LoxCallable> function;
+    if (callee.type() == typeid(std::shared_ptr<LoxFunction>)) {
+      function = std::any_cast<std::shared_ptr<LoxFunction>>(callee);
+    } else {
       throw RuntimeError{expr->paren, "Can only call functions and classes."};
     }
 
-    std::shared_ptr<Callable> function;
+    if (arguments.size() != function->arity()) {
+      throw RuntimeError{expr->paren,
+                         "Expected " + std::to_string(function->arity()) +
+                             " arguments but got " +
+                             std::to_string(arguments.size()) + "."};
+    }
     return function->call(*this, std::move(arguments));
   }
 

@@ -13,7 +13,7 @@ class Environment : public std::enable_shared_from_this<Environment> {
   std::map<std::string, std::any> values;
 
 public:
-  Environment() { enclosing = nullptr; }
+  Environment() : enclosing{nullptr} {}
 
   Environment(std::shared_ptr<Environment> enclosing)
       : enclosing{std::move(enclosing)} {}
