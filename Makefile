@@ -6,7 +6,8 @@ CPPFLAGS := -MMD
 COMPILE := $(CXX) $(CXXFLAGS) $(CPPFLAGS)
 
 # Source files
-LOX_SRCS := $(wildcard src/*.cpp)
+# LOX_SRCS := $(wildcard src/*.cpp)
+LOX_SRCS := src/cpplox.cpp
 TOOL_SRCS := $(wildcard tools/*.cpp)
 SRCS := $(LOX_SRCS) $(TOOL_SRCS)
 
@@ -59,10 +60,39 @@ run: $(TARGET)
 	./$(TARGET) $(ARGS)
 
 # Tests
-.PHONY: test
-test: $(TARGET)
-	@echo "testing cpplox with test1.lox ..."
-	@$(TARGET) tests/test1.lox 2>&1 | diff -u --color tests/test1.lox.expected -;
+define make_test
+.PHONY: $(1)
+$(1):
+	@make all >/dev/null
+	@echo "testing cpplox with $(1).lox ..."
+	@./build/cpplox tests/$(1).lox | diff -u --color tests/$(1).lox.expected -;
+endef
+
+
+TESTS = \
+test-statements \
+test-statements2 \
+test-statements3 \
+test-statements4 \
+test-statements5 \
+test-statements6 \
+test-control-flow \
+test-control-flow2 \
+test-functions \
+test-functions2 \
+test-functions3 \
+test-functions4 \
+
+
+$(foreach test, $(TESTS), $(eval $(call make_test,$(test))))
+
+
+.PHONY: test-all
+test-all:
+	@for test in $(TESTS); do \
+		make -s $$test; \
+	done
+
 
 # Clean build files
 .PHONY: clean
