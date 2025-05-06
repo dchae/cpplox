@@ -17,10 +17,13 @@ std::any LoxFunction::call(Interpreter &interpreter,
     environment->define(declaration->params[i].lexeme, arguments[i]);
   }
 
-  interpreter.executeBlock(declaration->body, environment);
+  try {
+    interpreter.executeBlock(declaration->body, environment);
+  } catch (LoxReturn returnValue) {
+    return returnValue.value;
+  }
 
-  // return "nil" for now
-  return {};
+  return nullptr;
 }
 
 std::string LoxFunction::toString() {

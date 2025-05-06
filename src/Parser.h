@@ -70,6 +70,9 @@ private:
     if (match(PRINT)) {
       return printStatement();
     }
+    if (match(RETURN)) {
+      return returnStatement();
+    }
     if (match(WHILE)) {
       return whileStatement();
     }
@@ -143,6 +146,17 @@ private:
     std::shared_ptr<Expr> value = expression();
     consume(SEMICOLON, "Expect ';' after value.");
     return std::make_shared<Print>(value);
+  }
+
+  std::shared_ptr<Stmt> returnStatement() {
+    Token keyword = previous();
+    std::shared_ptr<Expr> value = nullptr;
+    if (!check(SEMICOLON)) {
+      value = expression();
+    }
+
+    consume(SEMICOLON, "Expect ';' after value.");
+    return std::make_shared<Return>(keyword, value);
   }
 
   std::shared_ptr<Stmt> whileStatement() {

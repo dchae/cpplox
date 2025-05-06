@@ -5,6 +5,7 @@
 #include "Expr.h"
 #include "LoxCallable.h"
 #include "LoxFunction.h"
+#include "LoxReturn.h"
 #include "RuntimeError.h"
 #include "Stmt.h"
 #include <any>
@@ -103,6 +104,15 @@ public:
     std::cout << stringify(value) << "\n";
 
     return {};
+  }
+
+  std::any visitReturnStmt(std::shared_ptr<Return> stmt) override {
+    std::any value = nullptr;
+    if (stmt->value != nullptr) {
+      value = evaluate(stmt->value);
+    }
+
+    throw LoxReturn{value};
   }
 
   std::any visitWhileStmt(std::shared_ptr<While> stmt) override {
@@ -329,6 +339,10 @@ private:
 
     if (valueType == typeid(bool)) {
       return std::any_cast<bool>(object) ? "true" : "false";
+    }
+
+    if (valueType == typeid(std::shared_ptr<LoxFunction>)) {
+      return std::any_cast<std::shared_ptr<LoxFunction>>(object)->toString();
     }
 
     return "Error in Interpreter.stringify(): unsupported object type.";
