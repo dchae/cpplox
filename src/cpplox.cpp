@@ -8,10 +8,6 @@
 #include <sstream>
 #include <string>
 
-// We are including this for now to mirror the jlox code
-// TODO: Refactor this include
-#include "LoxFunction.cpp"
-
 std::string readFile(const std::string_view path) {
   std::ifstream file(path.data(), std::ios::binary);
   if (!file) {

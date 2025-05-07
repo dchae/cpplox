@@ -6,8 +6,7 @@ CPPFLAGS := -MMD
 COMPILE := $(CXX) $(CXXFLAGS) $(CPPFLAGS)
 
 # Source files
-# LOX_SRCS := $(wildcard src/*.cpp)
-LOX_SRCS := src/cpplox.cpp
+LOX_SRCS := $(wildcard src/*.cpp)
 TOOL_SRCS := $(wildcard tools/*.cpp)
 SRCS := $(LOX_SRCS) $(TOOL_SRCS)
 

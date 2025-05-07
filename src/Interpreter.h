@@ -6,6 +6,7 @@
 #include "LoxCallable.h"
 #include "LoxFunction.h"
 #include "LoxReturn.h"
+#include "NativeClock.h"
 #include "RuntimeError.h"
 #include "Stmt.h"
 #include <any>
@@ -14,19 +15,6 @@
 #include <memory> // std::shared_ptr
 #include <utility>
 #include <vector>
-
-class NativeClock : public LoxCallable {
-public:
-  size_t arity() override { return 0; };
-
-  std::any call(Interpreter &interpreter,
-                std::vector<std::any> arguments) override {
-    auto ticks = std::chrono::system_clock::now().time_since_epoch();
-    return std::chrono::duration<double>{ticks}.count() / 1000.0;
-  }
-
-  std::string toString() override { return "<native fn>"; }
-};
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
   friend class LoxFunction;
@@ -38,8 +26,7 @@ private:
   std::shared_ptr<Environment> environment = globals;
 
 public:
-  // TODO: Try to refactor NativeClock implementation
-  Interpreter() { globals->define("clock", std::shared_ptr<NativeClock>{}); }
+  Interpreter() { globals->define("clock", std::make_shared<NativeClock>()); }
 
   void interpret(const std::vector<std::shared_ptr<Stmt>> &statements) {
     try {

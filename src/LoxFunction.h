@@ -6,7 +6,7 @@
 #include <vector>
 
 class Environment;
-class Function;
+struct Function;
 
 class LoxFunction : public LoxCallable {
   std::shared_ptr<Function> declaration;
