@@ -135,7 +135,8 @@ public:
   }
 
   std::any visitFunctionStmt(std::shared_ptr<Function> stmt) override {
-    std::shared_ptr<LoxFunction> function = std::make_shared<LoxFunction>(stmt);
+    std::shared_ptr<LoxFunction> function =
+        std::make_shared<LoxFunction>(stmt, environment);
     environment->define(stmt->name.lexeme, function);
 
     return {};
