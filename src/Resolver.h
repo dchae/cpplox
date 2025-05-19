@@ -131,7 +131,7 @@ public:
 
   std::any visitVariableExpr(const std::shared_ptr<Variable> expr) override {
     if (!scopes.empty()) {
-      std::map<std::string, bool> scope = scopes.back();
+      std::map<std::string, bool> &scope = scopes.back();
       if (scope.contains(expr->name.lexeme) && !scope[expr->name.lexeme]) {
         error(expr->name, "Can't read local variable in its own initializer.");
       }
@@ -171,7 +171,7 @@ private:
       return;
     }
 
-    std::map<std::string, bool> scope = scopes.back();
+    std::map<std::string, bool> &scope = scopes.back();
     if (scope.contains(name.lexeme)) {
       error(name,
             "A variable with this name already exists in the current scope.");
@@ -185,7 +185,7 @@ private:
       return;
     }
 
-    std::map<std::string, bool> scope = scopes.back();
+    std::map<std::string, bool> &scope = scopes.back();
     scope[name.lexeme] = true;
   }
 

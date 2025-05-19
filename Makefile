@@ -68,27 +68,43 @@ $(1):
 endef
 
 
+define make_test_error
+.PHONY: $(1)
+$(1):
+	@make all >/dev/null
+	@echo "testing cpplox with $(1).lox ..."
+	@./build/cpplox tests/$(1).lox 2>&1 | diff -u --color tests/$(1).lox.expected -;
+endef
+
+
 TESTS = \
-test-statements \
-test-statements2 \
-test-statements3 \
-test-statements4 \
-test-statements5 \
-test-statements6 \
 test-control-flow \
 test-control-flow2 \
 test-functions \
 test-functions2 \
 test-functions3 \
 test-functions4 \
+test-resolving \
+test-statements \
+test-statements2 \
+test-statements3 \
+test-statements4 \
+test-statements5 \
+test-statements6 \
 
+
+TEST_ERRORS = \
+test-resolving2 \
+test-resolving3 \
+test-resolving4 \
 
 $(foreach test, $(TESTS), $(eval $(call make_test,$(test))))
+$(foreach test, $(TEST_ERRORS), $(eval $(call make_test_error,$(test))))
 
 
 .PHONY: test-all
 test-all:
-	@for test in $(TESTS); do \
+	@for test in $(TESTS) $(TEST_ERRORS); do \
 		make -s $$test; \
 	done
 
