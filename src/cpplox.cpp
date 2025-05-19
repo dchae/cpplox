@@ -1,6 +1,7 @@
 #include "Error.h"
 #include "Interpreter.h"
 #include "Parser.h"
+#include "Resolver.h"
 #include "Scanner.h"
 #include <cstring>
 #include <fstream>
@@ -32,6 +33,14 @@ void run(std::string_view source) {
   std::vector<std::shared_ptr<Stmt>> statements = parser.parse();
 
   // Stop if there was a syntax error
+  if (hadError) {
+    return;
+  }
+
+  Resolver resolver{interpreter};
+  resolver.resolve(statements);
+
+  // Stop if there was a resolution error
   if (hadError) {
     return;
   }

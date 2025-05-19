@@ -12,6 +12,7 @@
 #include <any>
 #include <format> // std::format (c++20)
 #include <iostream>
+#include <map>
 #include <memory> // std::shared_ptr
 #include <utility>
 #include <vector>
@@ -24,6 +25,7 @@ public:
 
 private:
   std::shared_ptr<Environment> environment = globals;
+  std::map<std::shared_ptr<Expr>, int> locals;
 
 public:
   Interpreter() { globals->define("clock", std::make_shared<NativeClock>()); }
@@ -36,6 +38,10 @@ public:
     } catch (RuntimeError error) {
       runtimeError(error);
     }
+  }
+
+  void resolve(const std::shared_ptr<Expr> &expr, int depth) {
+    locals[expr] = depth;
   }
 
 private:
@@ -132,7 +138,14 @@ public:
   // Expression visitor implementations
   std::any visitAssignExpr(std::shared_ptr<Assign> expr) override {
     std::any value = evaluate(expr->value);
-    environment->assign(expr->name, value);
+
+    if (locals.contains(expr)) {
+      int distance = locals[expr];
+      environment->assignAt(distance, expr->name, value);
+    } else {
+      globals->assign(expr->name, value);
+    }
+
     return value;
   }
 
@@ -252,11 +265,21 @@ public:
   }
 
   std::any visitVariableExpr(std::shared_ptr<Variable> expr) override {
-    return environment->get(expr->name);
+    return lookUpVariable(expr->name, expr);
   }
 
 private:
   // helpers
+  std::any lookUpVariable(const Token &name,
+                          const std::shared_ptr<Expr> &expr) {
+    if (locals.contains(expr)) {
+      int distance = locals[expr];
+      return environment->getAt(distance, name.lexeme);
+    }
+
+    return globals->get(name);
+  }
+
   void checkNumberOperand(const Token &op, const std::any &operand) {
     if (operand.type() == typeid(double)) {
       return;
