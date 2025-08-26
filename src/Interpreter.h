@@ -124,7 +124,21 @@ public:
   }
 
   std::any visitClassStmt(const std::shared_ptr<Class> stmt) override {
+    std::any superclass = nullptr;
+    if (stmt->superclass != nullptr) {
+      superclass = evaluate(stmt->superclass);
+      if (superclass.type() != typeid(std::shared_ptr<LoxClass>)) {
+        throw RuntimeError(stmt->superclass->name,
+                           "Superclass must be a class.");
+      }
+    }
+
     environment->define(stmt->name.lexeme, nullptr);
+
+    if (stmt->superclass != nullptr) {
+      environment = std::make_shared<Environment>(environment);
+      environment->define("super", superclass);
+    }
 
     std::map<std::string, std::shared_ptr<LoxFunction>> methods{};
     for (std::shared_ptr<Function> method : stmt->methods) {
@@ -133,7 +147,18 @@ public:
       methods[method->name.lexeme] = function;
     }
 
-    auto klass = std::make_shared<LoxClass>(stmt->name.lexeme, methods);
+    std::shared_ptr<LoxClass> superklass = nullptr;
+    if (superclass.type() == typeid(std::shared_ptr<LoxClass>)) {
+      superklass = std::any_cast<std::shared_ptr<LoxClass>>(superclass);
+    }
+
+    auto klass =
+        std::make_shared<LoxClass>(stmt->name.lexeme, superklass, methods);
+
+    if (superklass != nullptr) {
+      environment = environment->enclosing;
+    }
+
     environment->assign(stmt->name, std::move(klass));
     return {};
   }
@@ -192,6 +217,25 @@ public:
     std::any value = evaluate(expr->value);
     std::any_cast<std::shared_ptr<LoxInstance>>(object)->set(expr->name, value);
     return value;
+  }
+
+  std::any visitSuperExpr(std::shared_ptr<Super> expr) override {
+    int distance = locals[expr];
+    auto superclass = std::any_cast<std::shared_ptr<LoxClass>>(
+        environment->getAt(distance, "super"));
+
+    auto object = std::any_cast<std::shared_ptr<LoxInstance>>(
+        environment->getAt(distance - 1, "this"));
+
+    std::shared_ptr<LoxFunction> method =
+        superclass->findMethod(expr->method.lexeme);
+
+    if (method == nullptr) {
+      throw RuntimeError(expr->method,
+                         "Undefined property '" + expr->method.lexeme + "'.");
+    }
+
+    return method->bind(object);
   }
 
   std::any visitThisExpr(std::shared_ptr<This> expr) override {
@@ -299,7 +343,7 @@ public:
           expr->name);
     }
 
-    throw new RuntimeError(expr->name, "Only instances have properties.");
+    throw RuntimeError(expr->name, "Only instances have properties.");
   }
 
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {

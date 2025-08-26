@@ -52,6 +52,13 @@ private:
 
   std::shared_ptr<Stmt> classDeclaration() {
     Token name = consume(IDENTIFIER, "Expect class name.");
+
+    std::shared_ptr<Variable> superclass = nullptr;
+    if (match(LESS)) {
+      consume(IDENTIFIER, "Expect superclass name.");
+      superclass = std::make_shared<Variable>(previous());
+    }
+
     consume(LEFT_BRACE, "Expect '{' before class body.");
 
     std::vector<std::shared_ptr<Function>> methods;
@@ -61,7 +68,8 @@ private:
 
     consume(RIGHT_BRACE, "Expect '}' after class body.");
 
-    return std::make_shared<Class>(std::move(name), std::move(methods));
+    return std::make_shared<Class>(std::move(name), superclass,
+                                   std::move(methods));
   }
 
   std::shared_ptr<Stmt> varDeclaration() {
@@ -240,7 +248,8 @@ private:
         // convert r-value expression node to l-value Assign node
         Token name = variableExpr->name;
         return std::make_shared<Assign>(std::move(name), value);
-      } else if (Get *get = dynamic_cast<Get *>(expr.get())) {
+      }
+      if (Get *get = dynamic_cast<Get *>(expr.get())) {
         return std::make_shared<Set>(get->object, get->name, value);
       }
 
@@ -381,6 +390,13 @@ private:
 
     if (match(NUMBER, STRING)) {
       return std::make_shared<Literal>(previous().literal);
+    }
+
+    if (match(SUPER)) {
+      Token keyword = previous();
+      consume(DOT, "Expect '.' after 'super'.");
+      Token method = consume(IDENTIFIER, "Expect superclass method name.");
+      return std::make_shared<Super>(std::move(keyword), std::move(method));
     }
 
     if (match(THIS)) {

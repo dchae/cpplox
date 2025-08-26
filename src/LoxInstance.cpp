@@ -17,7 +17,7 @@ std::any LoxInstance::get(const Token &name) {
     return method->bind(shared_from_this());
   }
 
-  throw new RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
+  throw RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
 }
 
 void LoxInstance::set(const Token &name, std::any value) {

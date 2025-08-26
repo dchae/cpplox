@@ -2,14 +2,19 @@
 #include "LoxFunction.h"
 #include <utility>
 
-LoxClass::LoxClass(std::string name,
+LoxClass::LoxClass(std::string name, std::shared_ptr<LoxClass> superclass,
                    std::map<std::string, std::shared_ptr<LoxFunction>> methods)
-    : name{std::move(name)}, methods{std::move(methods)} {}
+    : name{std::move(name)}, superclass{std::move(superclass)},
+      methods{std::move(methods)} {}
 
 std::shared_ptr<LoxFunction>
 LoxClass::findMethod(const std::string &methodName) {
   if (methods.contains(methodName)) {
     return methods[methodName];
+  }
+
+  if (superclass != nullptr) {
+    return superclass->findMethod(methodName);
   }
 
   return nullptr;

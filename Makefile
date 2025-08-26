@@ -101,6 +101,9 @@ test-classes7 \
 test-classes8 \
 test-classes9 \
 test-classes12 \
+test-inheritance2 \
+test-inheritance3 \
+test-inheritance5 \
 
 
 TEST_ERRORS = \
@@ -110,6 +113,10 @@ test-resolving4 \
 test-classes10 \
 test-classes11 \
 test-classes13 \
+test-inheritance \
+test-inheritance4 \
+test-inheritance6 \
+test-inheritance7
 
 $(foreach test, $(TESTS), $(eval $(call make_test,$(test))))
 $(foreach test, $(TEST_ERRORS), $(eval $(call make_test_error,$(test))))

@@ -217,6 +217,7 @@ int main(int argc, char *argv[]) {
           "Literal  -> std::any value",
           "Logical  -> Expr* left, Token op, Expr* right",
           "Set      -> Expr* object, Token name, Expr* value",
+          "Super    -> Token keyword, Token method",
           "This     -> Token keyword",
           "Unary    -> Token op, Expr* right",
           "Variable -> Token name",
@@ -226,7 +227,8 @@ int main(int argc, char *argv[]) {
       outputDir, "Stmt",
       {
           "Block      -> std::vector<Stmt*> statements",
-          "Class      -> Token name, std::vector<Function*> methods",
+          "Class      -> Token name, Variable* superclass, "
+          "std::vector<Function*> methods",
           "Expression -> Expr* expression",
           "Function   -> Token name, std::vector<Token> params,"
           " std::vector<Stmt*> body",

@@ -19,6 +19,7 @@ class Resolver : public ExprVisitor, public StmtVisitor {
   enum class ClassType : std::uint8_t {
     NONE,
     CLASS,
+    SUBCLASS,
   };
 
   ClassType currentClass = ClassType::NONE;
@@ -48,10 +49,25 @@ public:
     declare(stmt->name);
     define(stmt->name);
 
+    if (stmt->superclass != nullptr &&
+        stmt->name.lexeme == stmt->superclass->name.lexeme) {
+      error(stmt->superclass->name, "A class can't inherit from itself.");
+    }
+
+    if (stmt->superclass != nullptr) {
+      currentClass = ClassType::SUBCLASS;
+      resolve(stmt->superclass);
+    }
+
+    if (stmt->superclass != nullptr) {
+      beginScope();
+      scopes.back()["super"] = true;
+    }
+
     beginScope();
     scopes.back()["this"] = true;
 
-    for (std::shared_ptr<Function> method : stmt->methods) {
+    for (const std::shared_ptr<Function> &method : stmt->methods) {
       FunctionType declaration = FunctionType::METHOD;
       if (method->name.lexeme == "init") {
         declaration = FunctionType::INITIALIZER;
@@ -61,6 +77,10 @@ public:
     }
 
     endScope();
+
+    if (stmt->superclass != nullptr) {
+      endScope();
+    }
 
     currentClass = enclosingClass;
     return {};
@@ -170,6 +190,17 @@ public:
   std::any visitSetExpr(const std::shared_ptr<Set> expr) override {
     resolve(expr->value);
     resolve(expr->object);
+    return {};
+  }
+
+  std::any visitSuperExpr(const std::shared_ptr<Super> expr) override {
+    if (currentClass == ClassType::NONE) {
+      error(expr->keyword, "Can't use 'super' outside of a class.");
+    } else if (currentClass != ClassType::SUBCLASS) {
+      error(expr->keyword, "Can't use 'super' in a class with no superclass.");
+    }
+
+    resolveLocal(expr, expr->keyword);
     return {};
   }
 

@@ -3,7 +3,7 @@
 #include <array>
 #include <string>
 
-enum TokenType {
+enum TokenType : std::uint8_t {
   // Single-character tokens
   LEFT_PAREN,
   RIGHT_PAREN,
