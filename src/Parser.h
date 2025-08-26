@@ -33,6 +33,9 @@ private:
   // Statements
   std::shared_ptr<Stmt> declaration() {
     try {
+      if (match(CLASS)) {
+        return classDeclaration();
+      }
       if (match(FUN)) {
         return function("function");
       }
@@ -45,6 +48,20 @@ private:
       synchronize();
       return nullptr;
     }
+  }
+
+  std::shared_ptr<Stmt> classDeclaration() {
+    Token name = consume(IDENTIFIER, "Expect class name.");
+    consume(LEFT_BRACE, "Expect '{' before class body.");
+
+    std::vector<std::shared_ptr<Function>> methods;
+    while (!check(RIGHT_BRACE) && !isAtEnd()) {
+      methods.push_back(function("method"));
+    }
+
+    consume(RIGHT_BRACE, "Expect '}' after class body.");
+
+    return std::make_shared<Class>(std::move(name), std::move(methods));
   }
 
   std::shared_ptr<Stmt> varDeclaration() {
@@ -219,12 +236,12 @@ private:
       // if (expr points to instance of Variable)
       // => if (dynamic cast of shared_ptr<Expr> expr to
       //        shared_ptr<Variable> variableExpr does not fail)
-      std::shared_ptr<Variable> variableExpr =
-          std::dynamic_pointer_cast<Variable>(expr);
-      if (variableExpr) {
+      if (Variable *variableExpr = dynamic_cast<Variable *>(expr.get())) {
         // convert r-value expression node to l-value Assign node
         Token name = variableExpr->name;
         return std::make_shared<Assign>(std::move(name), value);
+      } else if (Get *get = dynamic_cast<Get *>(expr.get())) {
+        return std::make_shared<Set>(get->object, get->name, value);
       }
 
       // call error instead of throwing it,
@@ -340,6 +357,9 @@ private:
     while (true) {
       if (match(LEFT_PAREN)) {
         expr = finishCall(expr);
+      } else if (match(DOT)) {
+        Token name = consume(IDENTIFIER, "Expect property name after '.'.");
+        expr = std::make_shared<Get>(expr, std::move(name));
       } else {
         break;
       }
@@ -361,6 +381,10 @@ private:
 
     if (match(NUMBER, STRING)) {
       return std::make_shared<Literal>(previous().literal);
+    }
+
+    if (match(THIS)) {
+      return std::make_shared<This>(previous());
     }
 
     if (match(IDENTIFIER)) {

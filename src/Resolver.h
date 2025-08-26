@@ -12,7 +12,16 @@ class Resolver : public ExprVisitor, public StmtVisitor {
   enum class FunctionType : std::uint8_t {
     NONE,
     FUNCTION,
+    INITIALIZER,
+    METHOD,
   };
+
+  enum class ClassType : std::uint8_t {
+    NONE,
+    CLASS,
+  };
+
+  ClassType currentClass = ClassType::NONE;
 
   FunctionType currentFunction = FunctionType::NONE;
 
@@ -29,6 +38,31 @@ public:
     beginScope();
     resolve(stmt->statements);
     endScope();
+    return {};
+  }
+
+  std::any visitClassStmt(const std::shared_ptr<Class> stmt) override {
+    ClassType enclosingClass = currentClass;
+    currentClass = ClassType::CLASS;
+
+    declare(stmt->name);
+    define(stmt->name);
+
+    beginScope();
+    scopes.back()["this"] = true;
+
+    for (std::shared_ptr<Function> method : stmt->methods) {
+      FunctionType declaration = FunctionType::METHOD;
+      if (method->name.lexeme == "init") {
+        declaration = FunctionType::INITIALIZER;
+      }
+
+      resolveFunction(method, declaration);
+    }
+
+    endScope();
+
+    currentClass = enclosingClass;
     return {};
   }
 
@@ -66,6 +100,10 @@ public:
     }
 
     if (stmt->value != nullptr) {
+      if (currentFunction == FunctionType::INITIALIZER) {
+        error(stmt->keyword, "Can't return a value from an initializer.");
+      }
+
       resolve(stmt->value);
     }
     return {};
@@ -108,6 +146,11 @@ public:
     return {};
   }
 
+  std::any visitGetExpr(const std::shared_ptr<Get> expr) override {
+    resolve(expr->object);
+    return {};
+  }
+
   std::any visitGroupingExpr(const std::shared_ptr<Grouping> expr) override {
     resolve(expr->expression);
     return {};
@@ -121,6 +164,22 @@ public:
   std::any visitLogicalExpr(const std::shared_ptr<Logical> expr) override {
     resolve(expr->left);
     resolve(expr->right);
+    return {};
+  }
+
+  std::any visitSetExpr(const std::shared_ptr<Set> expr) override {
+    resolve(expr->value);
+    resolve(expr->object);
+    return {};
+  }
+
+  std::any visitThisExpr(const std::shared_ptr<This> expr) override {
+    if (currentClass == ClassType::NONE) {
+      error(expr->keyword, "Can't use 'this' outside of a class.");
+      return {};
+    }
+
+    resolveLocal(expr, expr->keyword);
     return {};
   }
 

@@ -4,7 +4,9 @@
 #include "Error.h"
 #include "Expr.h"
 #include "LoxCallable.h"
+#include "LoxClass.h"
 #include "LoxFunction.h"
+#include "LoxInstance.h"
 #include "LoxReturn.h"
 #include "NativeClock.h"
 #include "RuntimeError.h"
@@ -121,6 +123,21 @@ public:
     return {};
   }
 
+  std::any visitClassStmt(const std::shared_ptr<Class> stmt) override {
+    environment->define(stmt->name.lexeme, nullptr);
+
+    std::map<std::string, std::shared_ptr<LoxFunction>> methods{};
+    for (std::shared_ptr<Function> method : stmt->methods) {
+      auto function = std::make_shared<LoxFunction>(
+          method, environment, method->name.lexeme == "init");
+      methods[method->name.lexeme] = function;
+    }
+
+    auto klass = std::make_shared<LoxClass>(stmt->name.lexeme, methods);
+    environment->assign(stmt->name, std::move(klass));
+    return {};
+  }
+
   std::any visitExpressionStmt(std::shared_ptr<Expression> stmt) override {
     evaluate(stmt->expression);
 
@@ -129,7 +146,7 @@ public:
 
   std::any visitFunctionStmt(std::shared_ptr<Function> stmt) override {
     std::shared_ptr<LoxFunction> function =
-        std::make_shared<LoxFunction>(stmt, environment);
+        std::make_shared<LoxFunction>(stmt, environment, false);
     environment->define(stmt->name.lexeme, function);
 
     return {};
@@ -163,6 +180,22 @@ public:
     }
 
     return evaluate(expr->right);
+  }
+
+  std::any visitSetExpr(std::shared_ptr<Set> expr) override {
+    std::any object = evaluate(expr->object);
+
+    if (object.type() != typeid(std::shared_ptr<LoxInstance>)) {
+      throw RuntimeError(expr->name, "Only instances have fields.");
+    }
+
+    std::any value = evaluate(expr->value);
+    std::any_cast<std::shared_ptr<LoxInstance>>(object)->set(expr->name, value);
+    return value;
+  }
+
+  std::any visitThisExpr(std::shared_ptr<This> expr) override {
+    return lookUpVariable(expr->keyword, expr);
   }
 
   std::any visitBinaryExpr(std::shared_ptr<Binary> expr) override {
@@ -241,8 +274,11 @@ public:
     }
 
     std::shared_ptr<LoxCallable> function;
+
     if (callee.type() == typeid(std::shared_ptr<LoxFunction>)) {
       function = std::any_cast<std::shared_ptr<LoxFunction>>(callee);
+    } else if (callee.type() == typeid(std::shared_ptr<LoxClass>)) {
+      function = std::any_cast<std::shared_ptr<LoxClass>>(callee);
     } else {
       throw RuntimeError{expr->paren, "Can only call functions and classes."};
     }
@@ -254,6 +290,16 @@ public:
                              std::to_string(arguments.size()) + "."};
     }
     return function->call(*this, std::move(arguments));
+  }
+
+  std::any visitGetExpr(std::shared_ptr<Get> expr) override {
+    std::any object = evaluate(expr->object);
+    if (object.type() == typeid(std::shared_ptr<LoxInstance>)) {
+      return std::any_cast<std::shared_ptr<LoxInstance>>(object)->get(
+          expr->name);
+    }
+
+    throw new RuntimeError(expr->name, "Only instances have properties.");
   }
 
   std::any visitLiteralExpr(std::shared_ptr<Literal> expr) override {
@@ -354,6 +400,14 @@ private:
 
     if (valueType == typeid(std::shared_ptr<LoxFunction>)) {
       return std::any_cast<std::shared_ptr<LoxFunction>>(object)->toString();
+    }
+
+    if (valueType == typeid(std::shared_ptr<LoxClass>)) {
+      return std::any_cast<std::shared_ptr<LoxClass>>(object)->toString();
+    }
+
+    if (valueType == typeid(std::shared_ptr<LoxInstance>)) {
+      return std::any_cast<std::shared_ptr<LoxInstance>>(object)->toString();
     }
 
     return "Error in Interpreter.stringify(): unsupported object type.";

@@ -212,9 +212,12 @@ int main(int argc, char *argv[]) {
           "Assign   -> Token name, Expr* value",
           "Binary   -> Expr* left, Token op, Expr* right",
           "Call     -> Expr* callee, Token paren, std::vector<Expr*> arguments",
+          "Get      -> Expr* object, Token name",
           "Grouping -> Expr* expression",
           "Literal  -> std::any value",
           "Logical  -> Expr* left, Token op, Expr* right",
+          "Set      -> Expr* object, Token name, Expr* value",
+          "This     -> Token keyword",
           "Unary    -> Token op, Expr* right",
           "Variable -> Token name",
       });
@@ -223,6 +226,7 @@ int main(int argc, char *argv[]) {
       outputDir, "Stmt",
       {
           "Block      -> std::vector<Stmt*> statements",
+          "Class      -> Token name, std::vector<Function*> methods",
           "Expression -> Expr* expression",
           "Function   -> Token name, std::vector<Token> params,"
           " std::vector<Stmt*> body",
